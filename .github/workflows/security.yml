@@ -1,0 +1,63 @@
+name: Security
+
+on:
+  schedule:
+    # Run security audit weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run security audit
+      run: |
+        echo "Running npm audit..."
+        npm audit --audit-level=moderate
+    
+    - name: Check for known vulnerabilities
+      run: |
+        echo "Checking for high/critical vulnerabilities..."
+        npm audit --audit-level=high
+    
+    - name: Generate security report
+      if: github.event_name == 'schedule'
+      run: |
+        npm audit --json > security-report.json
+        echo "Security audit completed"
+    
+    - name: Upload security report
+      if: github.event_name == 'schedule'
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: security-report.json
+        retention-days: 30
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: high

@@ -1,0 +1,102 @@
+name: PR Test
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'tsconfig.json'
+
+jobs:
+  test-init-command:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build
+      run: npm run build
+    
+    - name: Test init command availability
+      run: |
+        # Test that init command is available in help
+        if node dist/cli/index.js --help | grep -q "init.*Initialize Brain"; then
+          echo "✅ Init command found in help"
+        else
+          echo "❌ Init command not found in help"
+          exit 1
+        fi
+    
+    - name: Test package installation flow
+      run: |
+        # Create test environment
+        mkdir -p test-env
+        cd test-env
+        
+        # Pack the current version
+        npm pack ../
+        
+        # Test installation
+        npm init -y
+        npm install brain-*.tgz
+        
+        # Verify brain command is available
+        if npx brain --help | grep -q "init.*Initialize Brain"; then
+          echo "✅ Package installs correctly with init command"
+        else
+          echo "❌ Package installation failed or init command missing"
+          exit 1
+        fi
+        
+        # Test other commands still work
+        mkdir sample-vault
+        echo "# Test" > sample-vault/test.md
+        npx brain -r sample-vault overview
+        
+        echo "✅ All installation tests passed"
+
+  compatibility-test:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build
+      run: npm run build
+    
+    - name: Test basic functionality
+      run: |
+        node dist/cli/index.js --version
+        node dist/cli/index.js --help
+      shell: bash
+    
+    - name: Test with sample vault
+      run: |
+        mkdir test-vault
+        echo "# Sample Note" > test-vault/sample.md
+        node dist/cli/index.js -r test-vault overview
+      shell: bash

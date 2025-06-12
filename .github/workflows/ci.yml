@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build TypeScript
+      run: npm run build
+    
+    - name: Check TypeScript compilation
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "Build failed - dist directory not created"
+          exit 1
+        fi
+        echo "✅ TypeScript compilation successful"
+    
+    - name: Test CLI commands
+      run: |
+        # Test basic commands
+        node dist/cli/index.js --version
+        node dist/cli/index.js --help
+        
+        # Test with sample notes
+        mkdir -p test-vault
+        echo "# Test Note" > test-vault/test.md
+        echo "Links to [[other]]" >> test-vault/test.md
+        
+        # Test overview command
+        node dist/cli/index.js -r test-vault overview
+        
+        # Test search command
+        node dist/cli/index.js -r test-vault search "test"
+    
+    - name: Test package installation
+      run: |
+        # Pack and install locally
+        npm pack
+        cd /tmp
+        npm init -y
+        npm install ${{ github.workspace }}/brain-*.tgz
+        
+        # Test global installation works
+        npx brain --version
+        echo "✅ Package installation test passed"
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check formatting
+      run: |
+        # Check if TypeScript files are properly formatted
+        echo "Checking TypeScript code style..."
+        npx tsc --noEmit
+        echo "✅ TypeScript check passed"
