@@ -1,10 +1,9 @@
 {
-  "name": "ainotes",
+  "name": "brain",
   "version": "1.0.0",
-  "description": "AINodes is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.",
+  "description": "Brain - Knowledge Base Navigation Tool for LLMs. Navigate and understand markdown-based knowledge bases with graph analysis, multi-strategy search, and LLM-optimized output.",
   "main": "dist/index.js",
   "bin": {
-    "ainotes": "./dist/cli/index.js",
     "brain": "./dist/cli/index.js"
   },
   "directories": {
@@ -22,9 +21,9 @@
     "type": "git",
     "url": "git+https://github.com/samleeney/brain.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["markdown", "knowledge-base", "llm", "cli", "graph", "notes", "search", "ai"],
+  "author": "Sam Leeney <sam@samleeney.com>",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/samleeney/brain/issues"

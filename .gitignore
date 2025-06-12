@@ -160,7 +160,7 @@ cython_debug/
 .idea/
 
 # Cache directories
-.ainotes/
+.brain/
 
 # TypeScript build output
 dist/
