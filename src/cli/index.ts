@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs';
+import inquirer from 'inquirer';
 import { GraphBuilder } from '../graph/GraphBuilder';
 import { SearchEngine } from '../search/SearchEngine';
 import { LLMFormatter } from '../formatters/LLMFormatter';
@@ -43,6 +44,192 @@ program.hook('preAction', async (thisCommand) => {
     process.exit(1);
   }
 });
+
+program
+  .command('init')
+  .description('Initialize Brain for your knowledge base')
+  .action(async () => {
+    try {
+      console.log('🧠 Welcome to Brain - Knowledge Base Navigation Tool for LLMs');
+      console.log('');
+      
+      // Ask for vault location
+      const { vaultPath } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'vaultPath',
+          message: 'Where is your knowledge base/vault located?',
+          default: process.cwd(),
+          validate: (input: string) => {
+            const resolvedPath = path.resolve(input);
+            if (!fs.existsSync(resolvedPath)) {
+              return `Directory '${resolvedPath}' does not exist.`;
+            }
+            return true;
+          }
+        }
+      ]);
+
+      // Ask for mode
+      const { mode } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'mode',
+          message: 'Which mode do you want to use?',
+          choices: [
+            {
+              name: 'Auto - Brain loads overview automatically when LLM starts session',
+              value: 'auto'
+            },
+            {
+              name: 'Call - You manually call Brain commands when needed',
+              value: 'call'
+            }
+          ]
+        }
+      ]);
+
+      const resolvedVaultPath = path.resolve(vaultPath);
+      
+      // Create or update config
+      const configPath = path.join(resolvedVaultPath, '.brain-config.json');
+      const config = {
+        vaultPath: resolvedVaultPath,
+        mode,
+        initialized: true,
+        initDate: new Date().toISOString()
+      };
+      
+      await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
+      
+      console.log('');
+      console.log('✅ Brain initialization complete!');
+      console.log('');
+      
+      // Generate LLM instructions
+      const instructions = generateLLMInstructions(resolvedVaultPath, mode);
+      console.log('📋 Add these instructions to your LLM\'s knowledge base:');
+      console.log('');
+      console.log('---START CLAUDE.md CONTENT---');
+      console.log(instructions);
+      console.log('---END CLAUDE.md CONTENT---');
+      console.log('');
+      
+      // Check if user is using Claude Code
+      const { isClaudeCode } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'isClaudeCode',
+          message: 'Are you using Claude Code? (We can add this to CLAUDE.md automatically)',
+          default: false
+        }
+      ]);
+      
+      if (isClaudeCode) {
+        // Ask where to save CLAUDE.md
+        const { claudeLocation } = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'claudeLocation',
+            message: 'Where should we add the Brain instructions?',
+            choices: [
+              {
+                name: 'Global Claude config (~/.claude/CLAUDE.md) - Available in all projects',
+                value: 'global'
+              },
+              {
+                name: 'Current directory - Project-specific',
+                value: 'current'
+              },
+              {
+                name: 'Somewhere else - I\'ll add them manually',
+                value: 'manual'
+              }
+            ],
+            default: 'global'
+          }
+        ]);
+        
+        if (claudeLocation === 'manual') {
+          console.log('\n📋 Copy these instructions to your preferred CLAUDE.md location:');
+          console.log('');
+          console.log('---START CLAUDE.md CONTENT---');
+          console.log(`# Brain Knowledge Base Navigation\n\n${instructions}`);
+          console.log('---END CLAUDE.md CONTENT---');
+          console.log('');
+          return;
+        }
+        
+        let claudeMdPath: string;
+        const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+        
+        switch (claudeLocation) {
+          case 'global':
+            claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+            // Ensure ~/.claude directory exists
+            const claudeDir = path.dirname(claudeMdPath);
+            if (!fs.existsSync(claudeDir)) {
+              await fs.promises.mkdir(claudeDir, { recursive: true });
+            }
+            break;
+          case 'current':
+            claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+            break;
+          default:
+            claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+        }
+        
+        let existingContent = '';
+        
+        if (fs.existsSync(claudeMdPath)) {
+          existingContent = await fs.promises.readFile(claudeMdPath, 'utf-8');
+          
+          // Check if Brain instructions already exist
+          if (existingContent.includes('Brain Knowledge Base Navigation')) {
+            const { updateExisting } = await inquirer.prompt([
+              {
+                type: 'confirm',
+                name: 'updateExisting',
+                message: 'Brain instructions already exist in this file. Update them?',
+                default: true
+              }
+            ]);
+            
+            if (!updateExisting) {
+              console.log('📝 Keeping existing Brain instructions');
+              return;
+            }
+            
+            // Remove existing Brain section
+            existingContent = existingContent.replace(/# Brain Knowledge Base Navigation[\s\S]*?(?=\n#|$)/g, '').trim();
+            if (existingContent) {
+              existingContent += '\n\n';
+            }
+          } else if (existingContent) {
+            existingContent += '\n\n';
+          }
+        }
+        
+        const brainSection = `# Brain Knowledge Base Navigation
+
+${instructions}`;
+        
+        await fs.promises.writeFile(claudeMdPath, existingContent + brainSection);
+        console.log(`✅ Added Brain instructions to ${claudeMdPath}`);
+        
+        if (claudeLocation === 'global') {
+          console.log('🌍 Brain will now be available in ALL Claude Code sessions!');
+        }
+      }
+      
+      console.log('');
+      console.log('🚀 You can now run `brain overview` to see your knowledge base summary');
+      
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      process.exit(1);
+    }
+  });
 
 program
   .command('overview')
@@ -328,6 +515,126 @@ program
     }
   });
 
+program
+  .command('claude-setup')
+  .description('Add Brain to Claude Code configuration')
+  .action(async () => {
+    try {
+      // Look for existing Brain config
+      const configPath = path.join(context.notesRoot, '.brain-config.json');
+      let vaultPath = context.notesRoot;
+      let mode = 'call';
+      
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(await fs.promises.readFile(configPath, 'utf-8'));
+        vaultPath = config.vaultPath || vaultPath;
+        mode = config.mode || mode;
+        console.log(`📁 Found Brain config: vault at ${vaultPath}, mode: ${mode}`);
+      } else {
+        console.log(`📁 Using current directory as vault: ${vaultPath}`);
+      }
+      
+      const instructions = generateLLMInstructions(vaultPath, mode);
+      
+      // Ask where to save CLAUDE.md
+      const { claudeLocation } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'claudeLocation',
+          message: 'Where should we add the Brain instructions?',
+          choices: [
+            {
+              name: 'Global Claude config (~/.claude/CLAUDE.md) - Available in all projects',
+              value: 'global'
+            },
+            {
+              name: 'Current directory - Project-specific',
+              value: 'current'
+            },
+            {
+              name: 'Somewhere else - I\'ll add them manually',
+              value: 'manual'
+            }
+          ],
+          default: 'global'
+        }
+      ]);
+      
+      if (claudeLocation === 'manual') {
+        console.log('\n📋 Copy these instructions to your preferred CLAUDE.md location:');
+        console.log('');
+        console.log('---START CLAUDE.md CONTENT---');
+        console.log(`# Brain Knowledge Base Navigation\n\n${instructions}`);
+        console.log('---END CLAUDE.md CONTENT---');
+        console.log('');
+        return;
+      }
+      
+      let claudeMdPath: string;
+      const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+      
+      if (claudeLocation === 'global') {
+        claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+        // Ensure ~/.claude directory exists
+        const claudeDir = path.dirname(claudeMdPath);
+        if (!fs.existsSync(claudeDir)) {
+          await fs.promises.mkdir(claudeDir, { recursive: true });
+        }
+      } else {
+        claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+      }
+      
+      let existingContent = '';
+      
+      if (fs.existsSync(claudeMdPath)) {
+        existingContent = await fs.promises.readFile(claudeMdPath, 'utf-8');
+        
+        // Check if Brain instructions already exist
+        if (existingContent.includes('Brain Knowledge Base Navigation')) {
+          const { updateExisting } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'updateExisting',
+              message: 'Brain instructions already exist in this file. Update them?',
+              default: true
+            }
+          ]);
+          
+          if (!updateExisting) {
+            console.log('📝 Keeping existing Brain instructions');
+            return;
+          }
+          
+          // Remove existing Brain section
+          existingContent = existingContent.replace(/# Brain Knowledge Base Navigation[\s\S]*?(?=\n#|$)/g, '').trim();
+          if (existingContent) {
+            existingContent += '\n\n';
+          }
+        } else if (existingContent) {
+          existingContent += '\n\n';
+        }
+      }
+      
+      const brainSection = `# Brain Knowledge Base Navigation
+
+${instructions}`;
+      
+      await fs.promises.writeFile(claudeMdPath, existingContent + brainSection);
+      console.log(`✅ Added Brain instructions to ${claudeMdPath}`);
+      
+      if (claudeLocation === 'global') {
+        console.log('🌍 Brain will now be available in ALL Claude Code sessions!');
+      }
+      
+      if (!fs.existsSync(configPath)) {
+        console.log('\n💡 Tip: Run `brain init` to properly configure Brain for your vault');
+      }
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      process.exit(1);
+    }
+  });
+
 async function loadGraph() {
   const cacheManager = new CacheManager(context.notesRoot);
   
@@ -378,6 +685,43 @@ function findNote(graph: any, notePath: string) {
   }
   
   return null;
+}
+
+function generateLLMInstructions(vaultPath: string, mode: string): string {
+  const autoInstructions = mode === 'auto' ? `
+## Auto Mode Setup
+
+At the start of each session, automatically run:
+\`\`\`bash
+brain -r "${vaultPath}" overview
+\`\`\`
+
+This gives you immediate context about the user's knowledge base.` : '';
+
+  const callInstructions = mode === 'call' ? `
+## Call Mode Usage
+
+Use these commands when the user asks about their notes or knowledge:
+- \`brain -r "${vaultPath}" search "<query>"\` - Search for content
+- \`brain -r "${vaultPath}" read "<note-path>"\` - Read a specific note
+- \`brain -r "${vaultPath}" related "<note-path>"\` - Find related notes` : '';
+
+  return `This user has a knowledge base located at: ${vaultPath}
+
+Use the 'brain' CLI tool to help navigate and understand their notes.
+
+Available commands:
+- \`brain -r "${vaultPath}" overview\` - Get knowledge base summary
+- \`brain -r "${vaultPath}" search "<query>"\` - Multi-strategy search
+- \`brain -r "${vaultPath}" read "<path>"\` - Read specific note with context
+- \`brain -r "${vaultPath}" ls [path]\` - List notes in directory
+- \`brain -r "${vaultPath}" related "<path>"\` - Find related notes
+- \`brain -r "${vaultPath}" grep "<pattern>"\` - Search content with regex
+- \`brain -r "${vaultPath}" glob "<pattern>"\` - Find files by pattern
+
+${autoInstructions}${callInstructions}
+
+The knowledge base uses markdown files with wiki-style [[links]] and standard [markdown](links). Brain understands the graph structure and can help you navigate connections between notes.`;
 }
 
 program.parse();

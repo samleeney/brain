@@ -36,21 +36,42 @@ brain --notes-root ~/vault read relevant-note.md
 
 This two-tier approach allows intelligent filtering - the agent "knows" your knowledge base well enough to decide when to search deeper, just like how you might remember "I wrote something about X" before looking for the specific note.
 
-## 🚀 Setup for Claude Code
+## 🚀 Quick Setup
 
 ### 1. Install Brain
 ```bash
 npm install -g brain
 ```
 
-### 2. Initialize Your Knowledge Graph
+### 2. Initialize Your Knowledge Base
 ```bash
-# Run once to build your knowledge graph
-brain --notes-root ~/vault overview
+brain init
 ```
 
-### 3. Configure Persistent Access
-Create `CLAUDE.md` in your project to establish always-on knowledge integration:
+The init command will:
+- 📂 Ask for your knowledge base/vault location
+- 🎯 Let you choose between **Auto** mode (loads overview automatically) or **Call** mode (manual commands)
+- 📋 Generate LLM-optimized instructions for your setup
+- 🤖 Automatically integrate with Claude Code (creates/updates CLAUDE.md)
+
+### 3. Start Using
+After initialization, your LLM agent will have persistent access to your knowledge base according to your chosen mode.
+
+### Example Setup Flow
+```bash
+$ brain init
+🧠 Welcome to Brain - Knowledge Base Navigation Tool for LLMs
+
+? Where is your knowledge base/vault located? ~/vault
+? Which mode do you want to use? Auto - Brain loads overview automatically when LLM starts session
+
+✅ Brain initialization complete!
+✅ Added Brain instructions to ~/vault/CLAUDE.md
+🚀 You can now run `brain overview` to see your knowledge base summary
+```
+
+### Manual Configuration (Optional)
+If you prefer manual setup, create `CLAUDE.md` in your project:
 
 ```markdown
 # Knowledge Base Integration
@@ -110,11 +131,20 @@ You should "know" my knowledge base like you know your training data - seamlessl
 
 ## 🎯 Key Commands for LLM Agents
 
+### Setup & Initialization
+```bash
+# First-time setup - run after installing Brain
+brain init
+
+# Get complete knowledge base overview - START HERE (after init)
+brain overview  # or: brain --notes-root ~/notes overview
+
+# Check your Brain configuration
+brain --notes-root ~/notes cache stats
+```
+
 ### Essential Navigation
 ```bash
-# Get complete knowledge base overview - START HERE
-brain --notes-root ~/notes overview
-
 # Search across all content, filenames, tags
 brain --notes-root ~/notes search "your query"
 
@@ -170,10 +200,11 @@ LLM agents should use Brain when the user query suggests personal knowledge rele
 
 ## 🔧 Core Agent Commands
 
-### Session Initialization (Required)
+### Session Initialization (After brain init)
 ```bash
 # Load complete knowledge graph at session start
-brain --notes-root ~/vault overview
+brain overview  # Uses path from init configuration
+# or specify manually: brain --notes-root ~/vault overview
 
 # Agent now knows: all topics, clusters, key notes, connections
 # This context stays loaded for intelligent decision-making
@@ -331,8 +362,11 @@ Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md)
 The agent should seamlessly weave your personal knowledge into conversations:
 
 ```
+Setup (once):
+brain init  # Configured vault at ~/vault, chose Auto mode
+
 Session Start:
-brain --notes-root ~/vault overview
+brain overview  # or automatically loaded in Auto mode
 → Agent loads: "Web scraping" cluster (5 notes), "Python automation" projects, "E-commerce" research area
 
 User: "I want to build a web scraper for product prices"
