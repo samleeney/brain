@@ -4,12 +4,37 @@ Brain provides LLM agents with intelligent, contextual access to your markdown k
 
 ## 🧠 How It Works
 
-Brain creates a **persistent knowledge graph** that LLM agents can query intelligently:
+Brain provides **persistent knowledge graph access** for intelligent agent decision-making:
 
-1. **📊 Graph Awareness**: Agent understands your entire knowledge structure - topics, connections, clusters
-2. **🎯 Context-Driven Access**: Agent automatically searches your notes when queries are relevant to your knowledge base  
-3. **🔍 Smart Search**: Multi-strategy search finds exactly what's needed without overwhelming context
-4. **🔗 Relationship Navigation**: Agent can trace connections and discover related concepts
+1. **📊 Always-On Graph Awareness**: Agent loads your knowledge map at session start and maintains awareness of all topics, structure, and connections
+2. **🎯 Context-Driven Decisions**: With full graph visibility, agent intelligently decides when user queries intersect with your documented knowledge
+3. **🔍 Targeted Deep Search**: When relevant, agent searches specific areas of your knowledge base for detailed context
+4. **🔗 Relationship Navigation**: Agent can trace connections and discover related concepts you've documented
+
+**Key Insight**: The agent needs your knowledge graph structure loaded at all times to make smart decisions about when to search deeper.
+
+## 🎯 Two-Tier Access Pattern
+
+### Tier 1: Always-On Graph Awareness
+```bash
+# Load at session start and keep in context
+brain --notes-root ~/vault overview
+```
+**Result**: Agent knows your entire knowledge landscape:
+- Topics you've researched (machine learning, web development, etc.)
+- Project clusters and their connections  
+- Key hub notes and their relationships
+- Knowledge gaps and orphaned notes
+
+### Tier 2: Contextual Deep Search  
+```bash
+# Only when Tier 1 indicates relevance
+brain --notes-root ~/vault search "specific query"
+brain --notes-root ~/vault read relevant-note.md
+```
+**Result**: Agent retrieves detailed content when the overview suggests relevance
+
+This two-tier approach allows intelligent filtering - the agent "knows" your knowledge base well enough to decide when to search deeper, just like how you might remember "I wrote something about X" before looking for the specific note.
 
 ## 🚀 Setup for Claude Code
 
@@ -24,28 +49,36 @@ npm install -g brain
 brain --notes-root ~/vault overview
 ```
 
-### 3. Configure Claude Code (Optional)
-Create `CLAUDE.md` in your project to tell Claude about your notes:
+### 3. Configure Persistent Access
+Create `CLAUDE.md` in your project to establish always-on knowledge integration:
 
 ```markdown
 # Knowledge Base Integration
 
 My personal notes are stored at `~/vault` and indexed with Brain.
 
-Claude should automatically search my notes when:
-- I ask about topics I've researched or written about
-- I need context from previous projects or ideas  
-- I reference concepts that might be in my knowledge base
-- I ask "what do I know about X?" or similar
+## Session Initialization
+At the start of every session, load my knowledge graph:
+`brain --notes-root ~/vault overview`
 
-To access my knowledge base, use:
-`brain --notes-root ~/vault [command]`
+This gives you the complete structure - topics, clusters, key notes, and connections.
+Keep this context loaded throughout our conversation.
 
-Key commands:
-- `overview` - Get knowledge base structure
-- `search "query"` - Find relevant notes
-- `read note.md` - Read specific note with context
-- `related note.md` - Find connected notes
+## Decision Framework
+With the knowledge graph loaded, automatically search deeper when user queries relate to:
+- Topics present in the graph (you'll know from overview)
+- Technical domains I've documented
+- Project names or concepts that appear in my notes
+- Problem areas where I have previous solutions
+
+## Search Commands
+When you decide to search deeper:
+- `brain --notes-root ~/vault search "query"` - Find relevant notes
+- `brain --notes-root ~/vault read note.md` - Get full context
+- `brain --notes-root ~/vault related note.md` - Find connections
+
+## Goal
+You should "know" my knowledge base like you know your training data - seamlessly reference it when relevant, ignore it when not.
 ```
 
 ## 💭 Agent Behavior Examples
@@ -137,13 +170,22 @@ LLM agents should use Brain when the user query suggests personal knowledge rele
 
 ## 🔧 Core Agent Commands
 
-### Graph Intelligence
+### Session Initialization (Required)
 ```bash
-# Understand the knowledge landscape first
+# Load complete knowledge graph at session start
 brain --notes-root ~/vault overview
 
-# Get high-level structure and key topics
+# Agent now knows: all topics, clusters, key notes, connections
+# This context stays loaded for intelligent decision-making
+```
+
+### Graph Intelligence
+```bash
+# Get detailed statistics when needed
 brain --notes-root ~/vault stats
+
+# Check cache freshness
+brain --notes-root ~/vault cache stats
 ```
 
 ### Context-Driven Search
@@ -289,13 +331,17 @@ Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md)
 The agent should seamlessly weave your personal knowledge into conversations:
 
 ```
+Session Start:
+brain --notes-root ~/vault overview
+→ Agent loads: "Web scraping" cluster (5 notes), "Python automation" projects, "E-commerce" research area
+
 User: "I want to build a web scraper for product prices"
 
 Claude Internal Process:
-1. Detects technical/project query → triggers brain search
-2. brain --notes-root ~/vault search "web scraping python automation"
-3. Finds relevant notes, incorporates personal context
-4. Responds with both general advice AND your specific tools/approaches
+1. Checks loaded knowledge graph → sees "web scraping" + "e-commerce" topics
+2. Recognizes user has documented experience in this area
+3. brain --notes-root ~/vault search "web scraping python automation"
+4. Finds relevant notes, incorporates personal context
 
 Claude Response: "For web scraping, I'd recommend using Python with BeautifulSoup or Scrapy. 
 
