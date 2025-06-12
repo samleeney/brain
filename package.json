@@ -1,0 +1,51 @@
+{
+  "name": "ainotes",
+  "version": "1.0.0",
+  "description": "AINodes is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.",
+  "main": "dist/index.js",
+  "bin": {
+    "ainotes": "./dist/cli/index.js",
+    "brain": "./dist/cli/index.js"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli/index.js",
+    "dev": "ts-node src/cli/index.ts",
+    "watch": "nodemon --exec ts-node src/cli/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samleeney/brain.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/samleeney/brain/issues"
+  },
+  "homepage": "https://github.com/samleeney/brain#readme",
+  "dependencies": {
+    "commander": "^14.0.0",
+    "fast-glob": "^3.3.3",
+    "glob": "^11.0.2",
+    "graphlib": "^2.1.8",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.0",
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "@types/graphlib": "^2.1.12",
+    "@types/js-yaml": "^4.0.9",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^24.0.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
