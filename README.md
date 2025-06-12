@@ -1,41 +1,79 @@
-# Brain - Knowledge Base Navigation Tool for LLMs
+# Brain - Knowledge Graph Integration for LLM Agents
 
-Brain is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
+Brain provides LLM agents with intelligent, contextual access to your markdown knowledge base. Instead of manually searching files, agents can understand your knowledge graph and autonomously decide when and how to access relevant information based on conversation context.
 
-## 🤖 Quick Start for Claude Code
+## 🧠 How It Works
 
-**For Claude Code users:** Brain allows you to give Claude intelligent access to your markdown notes. Here's how to get started:
+Brain creates a **persistent knowledge graph** that LLM agents can query intelligently:
+
+1. **📊 Graph Awareness**: Agent understands your entire knowledge structure - topics, connections, clusters
+2. **🎯 Context-Driven Access**: Agent automatically searches your notes when queries are relevant to your knowledge base  
+3. **🔍 Smart Search**: Multi-strategy search finds exactly what's needed without overwhelming context
+4. **🔗 Relationship Navigation**: Agent can trace connections and discover related concepts
+
+## 🚀 Setup for Claude Code
 
 ### 1. Install Brain
 ```bash
-# Claude can run this command for you
 npm install -g brain
 ```
 
-### 2. Tell Claude about your notes
-```
-Claude, I have my notes stored in ~/vault. Use the brain tool to explore them:
-
+### 2. Initialize Your Knowledge Graph
+```bash
+# Run once to build your knowledge graph
 brain --notes-root ~/vault overview
 ```
 
-### 3. Ask Claude to search and analyze
-```
-Claude, find all my notes about machine learning:
-brain --notes-root ~/vault search "machine learning"
+### 3. Configure Claude Code (Optional)
+Create `CLAUDE.md` in your project to tell Claude about your notes:
 
-Then read the most relevant one:
-brain --notes-root ~/vault read [note-path-from-search]
+```markdown
+# Knowledge Base Integration
+
+My personal notes are stored at `~/vault` and indexed with Brain.
+
+Claude should automatically search my notes when:
+- I ask about topics I've researched or written about
+- I need context from previous projects or ideas  
+- I reference concepts that might be in my knowledge base
+- I ask "what do I know about X?" or similar
+
+To access my knowledge base, use:
+`brain --notes-root ~/vault [command]`
+
+Key commands:
+- `overview` - Get knowledge base structure
+- `search "query"` - Find relevant notes
+- `read note.md` - Read specific note with context
+- `related note.md` - Find connected notes
 ```
 
-### 4. Let Claude navigate relationships
-```
-Claude, show me what's related to my project-ideas note:
-brain --notes-root ~/vault related project-ideas.md
+## 💭 Agent Behavior Examples
 
-And trace how my ideas connect to my implementations:
-brain --notes-root ~/vault trace ideas.md implementation.md
-```
+### Intelligent Context Detection
+
+**User**: *"I'm working on a React project and need to handle authentication"*
+
+**Claude's Decision Process**:
+- User mentions "React project" and "authentication" 
+- These are technical topics likely documented in notes
+- → Automatically search: `brain --notes-root ~/vault search "react authentication"`
+- Find relevant notes and incorporate into response
+
+**User**: *"What's the weather like today?"*
+
+**Claude's Decision Process**:
+- Weather query unrelated to personal knowledge base
+- → Skip Brain search, respond normally
+
+### Proactive Knowledge Integration
+
+**User**: *"Help me plan my weekend"*
+
+**Claude's Decision Process**:
+- Personal planning might reference previous ideas/projects
+- → Search: `brain --notes-root ~/vault search "weekend projects ideas"`
+- → If found, incorporate personal context: "I see you have some project ideas..."
 
 ## 🎯 Key Commands for LLM Agents
 
@@ -78,65 +116,84 @@ brain --notes-root ~/notes grep "regex-pattern"
 - **⚡ High Performance**: Handles 1000+ notes with intelligent caching
 - **🔄 Live Updates**: Incremental updates when files change
 
-## 💡 Why Brain + Claude Code?
+## 🤖 Agent Decision Framework
 
-Brain transforms how Claude Code can work with your knowledge base:
+LLM agents should use Brain when the user query suggests personal knowledge relevance:
 
-- **🎯 Contextual Understanding**: Instead of reading files one by one, Claude gets the full relationship map
-- **🔍 Intelligent Search**: Claude can find exactly what it needs across your entire knowledge base
-- **🧠 Graph Navigation**: Claude understands how your ideas connect and can trace thought processes
-- **⚡ Efficient Token Usage**: Dense, structured output minimizes context consumption
-- **🔄 Real-time Discovery**: Claude can explore relationships and discover relevant notes dynamically
+### ✅ **Search My Notes When**:
+- Technical questions about tools/frameworks I use
+- References to "my projects", "my ideas", "what I know"
+- Planning questions that might reference past work
+- Creative tasks that could build on documented concepts
+- Research topics I might have explored
+- Problem-solving for domains I work in
 
-## 📦 Installation
+### ❌ **Skip Brain When**:
+- General knowledge questions 
+- Current events or real-time information
+- Simple calculations or basic concepts
+- Weather, news, or external services
+- Questions clearly outside my documented interests
 
+## 🔧 Core Agent Commands
+
+### Graph Intelligence
 ```bash
-# LLM agents can run this directly
-npm install -g brain
-
-# Or use without installation
-npx brain --notes-root ~/notes overview
-```
-
-## 📋 Usage Patterns for LLM Agents
-
-### Pattern 1: Knowledge Base Exploration
-```bash
-# 1. Start with overview to understand structure
+# Understand the knowledge landscape first
 brain --notes-root ~/vault overview
 
-# 2. Search for specific topics
-brain --notes-root ~/vault search "topic"
-
-# 3. Read relevant notes with full context
-brain --notes-root ~/vault read [found-note.md]
-
-# 4. Explore connections
-brain --notes-root ~/vault related [found-note.md]
+# Get high-level structure and key topics
+brain --notes-root ~/vault stats
 ```
 
-### Pattern 2: Research Assistance
+### Context-Driven Search
 ```bash
-# Find all notes on a research topic
-brain --notes-root ~/vault search "research query"
+# Search when user mentions specific topics
+brain --notes-root ~/vault search "user mentioned topic"
 
-# Trace how concepts developed over time
-brain --notes-root ~/vault trace initial-idea.md final-paper.md
+# Find project-specific information
+brain --notes-root ~/vault search "project name OR domain"
 
-# Find related research and references
-brain --notes-root ~/vault related research-topic.md
+# Look for related concepts
+brain --notes-root ~/vault search "broader topic category"
 ```
 
-### Pattern 3: Project Context Building
+### Deep Context Retrieval
 ```bash
-# Get project overview
-brain --notes-root ~/vault glob "**/project-name*.md"
+# Read specific notes that match the query
+brain --notes-root ~/vault read [relevant-note.md]
 
-# Find project-related notes
-brain --notes-root ~/vault search "project-name"
+# Find related information to provide fuller context
+brain --notes-root ~/vault related [relevant-note.md]
 
-# Understand project connections
-brain --notes-root ~/vault related project-main.md
+# Trace connections between concepts
+brain --notes-root ~/vault trace [concept-a.md] [concept-b.md]
+```
+
+## 🎯 Smart Integration Patterns
+
+### Pattern 1: Contextual Enhancement
+```
+User asks about React hooks
+→ brain search "react hooks"
+→ If found: "Based on your notes about React hooks..."
+→ If not found: Standard response without personal context
+```
+
+### Pattern 2: Project Continuity  
+```
+User mentions working on a project
+→ brain search "[project indicators]"
+→ Surface relevant past work, notes, decisions
+→ Provide continuity with previous thinking
+```
+
+### Pattern 3: Knowledge Building
+```
+User asks about unfamiliar topic
+→ brain search "[topic]" 
+→ Check if they've researched this before
+→ Either build on existing knowledge or note it's new territory
 ```
 
 ## 🔧 Cache Management
@@ -226,32 +283,55 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md).
 
-## 🚀 Advanced LLM Usage Tips
+## 🎯 Real-World Agent Integration
 
-### For Claude Code Specifically:
-1. **Always start with `overview`** - gives you the complete knowledge base structure
-2. **Use `search` before `read`** - find the most relevant notes first
-3. **Leverage `related`** - discover connections you might miss
-4. **Use `trace`** - understand how ideas evolved or connect
-5. **Check `cache stats`** - ensure you're working with fresh data
+### Autonomous Knowledge Integration
+The agent should seamlessly weave your personal knowledge into conversations:
 
-### Sample Claude Code Session:
 ```
-User: "Help me find information about my machine learning projects"
+User: "I want to build a web scraper for product prices"
 
-Claude: I'll explore your knowledge base to find ML-related content.
+Claude Internal Process:
+1. Detects technical/project query → triggers brain search
+2. brain --notes-root ~/vault search "web scraping python automation"
+3. Finds relevant notes, incorporates personal context
+4. Responds with both general advice AND your specific tools/approaches
 
-brain --notes-root ~/vault overview
-brain --notes-root ~/vault search "machine learning"
-brain --notes-root ~/vault related [most-relevant-result]
+Claude Response: "For web scraping, I'd recommend using Python with BeautifulSoup or Scrapy. 
 
-Based on your knowledge base, I found several ML projects. Let me read the main one:
+I see from your notes that you've worked with web scraping before for your 'price-tracker' project, where you used Playwright for dynamic content. You also documented some rate limiting strategies that worked well. 
 
-brain --notes-root ~/vault read projects/ml-classifier.md
+Let me check what specific challenges you encountered..."
+```
 
-Now I can see this connects to your data processing notes. Let me trace that connection:
+### Smart Context Loading
+Agent loads just enough context without overwhelming the conversation:
 
-brain --notes-root ~/vault trace projects/ml-classifier.md data/preprocessing.md
+```
+User: "How should I structure my React components?"
+
+Claude Process:
+1. brain search "react components architecture"
+2. If found: Load your specific patterns and preferences
+3. Blend personal knowledge with general best practices
+4. Reference your actual project decisions
+
+Result: Advice tailored to YOUR coding style and previous decisions
+```
+
+### Proactive Knowledge Surfacing
+Agent can surface relevant knowledge even when not directly asked:
+
+```
+User: "I'm feeling stuck on this authentication flow"
+
+Claude Process:
+1. Recognizes problem-solving context
+2. brain search "authentication security oauth"
+3. Finds your previous auth implementations
+4. Suggests approaches you've used successfully before
+
+Result: "I notice you've solved similar auth challenges before. In your 'user-management' notes, you documented a clean JWT approach that handled refresh tokens elegantly..."
 ```
 
 ## 🔗 Links
