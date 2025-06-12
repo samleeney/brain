@@ -126,12 +126,81 @@ program
       ]);
       
       if (isClaudeCode) {
-        const claudeMdPath = path.join(resolvedVaultPath, 'CLAUDE.md');
+        // Ask where to save CLAUDE.md
+        const { claudeLocation } = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'claudeLocation',
+            message: 'Where should we add the Brain instructions?',
+            choices: [
+              {
+                name: 'Global Claude config (~/.claude/CLAUDE.md) - Available in all projects',
+                value: 'global'
+              },
+              {
+                name: 'Current directory - Project-specific',
+                value: 'current'
+              },
+              {
+                name: 'Vault directory - With your notes',
+                value: 'vault'
+              }
+            ],
+            default: 'global'
+          }
+        ]);
+        
+        let claudeMdPath: string;
+        const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+        
+        switch (claudeLocation) {
+          case 'global':
+            claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+            // Ensure ~/.claude directory exists
+            const claudeDir = path.dirname(claudeMdPath);
+            if (!fs.existsSync(claudeDir)) {
+              await fs.promises.mkdir(claudeDir, { recursive: true });
+            }
+            break;
+          case 'current':
+            claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+            break;
+          case 'vault':
+            claudeMdPath = path.join(resolvedVaultPath, 'CLAUDE.md');
+            break;
+          default:
+            claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+        }
+        
         let existingContent = '';
         
         if (fs.existsSync(claudeMdPath)) {
           existingContent = await fs.promises.readFile(claudeMdPath, 'utf-8');
-          existingContent += '\n\n';
+          
+          // Check if Brain instructions already exist
+          if (existingContent.includes('Brain Knowledge Base Navigation')) {
+            const { updateExisting } = await inquirer.prompt([
+              {
+                type: 'confirm',
+                name: 'updateExisting',
+                message: 'Brain instructions already exist in this file. Update them?',
+                default: true
+              }
+            ]);
+            
+            if (!updateExisting) {
+              console.log('📝 Keeping existing Brain instructions');
+              return;
+            }
+            
+            // Remove existing Brain section
+            existingContent = existingContent.replace(/# Brain Knowledge Base Navigation[\s\S]*?(?=\n#|$)/g, '').trim();
+            if (existingContent) {
+              existingContent += '\n\n';
+            }
+          } else if (existingContent) {
+            existingContent += '\n\n';
+          }
         }
         
         const brainSection = `# Brain Knowledge Base Navigation
@@ -140,6 +209,10 @@ ${instructions}`;
         
         await fs.promises.writeFile(claudeMdPath, existingContent + brainSection);
         console.log(`✅ Added Brain instructions to ${claudeMdPath}`);
+        
+        if (claudeLocation === 'global') {
+          console.log('🌍 Brain will now be available in ALL Claude Code sessions!');
+        }
       }
       
       console.log('');
@@ -429,6 +502,112 @@ program
       console.log(`Orphaned notes: ${graph.orphanNodes.length}`);
       console.log(`Broken links: ${graph.brokenLinks.length}`);
       console.log(`Clusters: ${graph.clusters.length}`);
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('claude-setup')
+  .description('Add Brain to Claude Code configuration')
+  .action(async () => {
+    try {
+      // Look for existing Brain config
+      const configPath = path.join(context.notesRoot, '.brain-config.json');
+      let vaultPath = context.notesRoot;
+      let mode = 'call';
+      
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(await fs.promises.readFile(configPath, 'utf-8'));
+        vaultPath = config.vaultPath || vaultPath;
+        mode = config.mode || mode;
+        console.log(`📁 Found Brain config: vault at ${vaultPath}, mode: ${mode}`);
+      } else {
+        console.log(`📁 Using current directory as vault: ${vaultPath}`);
+      }
+      
+      const instructions = generateLLMInstructions(vaultPath, mode);
+      
+      // Ask where to save CLAUDE.md
+      const { claudeLocation } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'claudeLocation',
+          message: 'Where should we add the Brain instructions?',
+          choices: [
+            {
+              name: 'Global Claude config (~/.claude/CLAUDE.md) - Available in all projects',
+              value: 'global'
+            },
+            {
+              name: 'Current directory - Project-specific',
+              value: 'current'
+            }
+          ],
+          default: 'global'
+        }
+      ]);
+      
+      let claudeMdPath: string;
+      const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+      
+      if (claudeLocation === 'global') {
+        claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
+        // Ensure ~/.claude directory exists
+        const claudeDir = path.dirname(claudeMdPath);
+        if (!fs.existsSync(claudeDir)) {
+          await fs.promises.mkdir(claudeDir, { recursive: true });
+        }
+      } else {
+        claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
+      }
+      
+      let existingContent = '';
+      
+      if (fs.existsSync(claudeMdPath)) {
+        existingContent = await fs.promises.readFile(claudeMdPath, 'utf-8');
+        
+        // Check if Brain instructions already exist
+        if (existingContent.includes('Brain Knowledge Base Navigation')) {
+          const { updateExisting } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'updateExisting',
+              message: 'Brain instructions already exist in this file. Update them?',
+              default: true
+            }
+          ]);
+          
+          if (!updateExisting) {
+            console.log('📝 Keeping existing Brain instructions');
+            return;
+          }
+          
+          // Remove existing Brain section
+          existingContent = existingContent.replace(/# Brain Knowledge Base Navigation[\s\S]*?(?=\n#|$)/g, '').trim();
+          if (existingContent) {
+            existingContent += '\n\n';
+          }
+        } else if (existingContent) {
+          existingContent += '\n\n';
+        }
+      }
+      
+      const brainSection = `# Brain Knowledge Base Navigation
+
+${instructions}`;
+      
+      await fs.promises.writeFile(claudeMdPath, existingContent + brainSection);
+      console.log(`✅ Added Brain instructions to ${claudeMdPath}`);
+      
+      if (claudeLocation === 'global') {
+        console.log('🌍 Brain will now be available in ALL Claude Code sessions!');
+      }
+      
+      if (!fs.existsSync(configPath)) {
+        console.log('\n💡 Tip: Run `brain init` to properly configure Brain for your vault');
+      }
     } catch (error) {
       console.error(`Error: ${error}`);
       process.exit(1);
