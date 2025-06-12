@@ -21,7 +21,16 @@
     "type": "git",
     "url": "git+https://github.com/samleeney/brain.git"
   },
-  "keywords": ["markdown", "knowledge-base", "llm", "cli", "graph", "notes", "search", "ai"],
+  "keywords": [
+    "markdown",
+    "knowledge-base",
+    "llm",
+    "cli",
+    "graph",
+    "notes",
+    "search",
+    "ai"
+  ],
   "author": "Sam Leeney <sam@samleeney.com>",
   "license": "MIT",
   "type": "commonjs",
@@ -30,11 +39,13 @@
   },
   "homepage": "https://github.com/samleeney/brain#readme",
   "dependencies": {
+    "@types/inquirer": "^9.0.8",
     "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.2",
     "graphlib": "^2.1.8",
     "gray-matter": "^4.0.3",
+    "inquirer": "^12.6.3",
     "js-yaml": "^4.1.0",
     "markdown-it": "^14.1.0"
   },
