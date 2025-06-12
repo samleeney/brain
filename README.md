@@ -2,16 +2,71 @@
 
 Brain is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
 
-## 🚀 Quick Start
+## 🤖 Quick Start for Claude Code
 
+**For Claude Code users:** Brain allows you to give Claude intelligent access to your markdown notes. Here's how to get started:
+
+### 1. Install Brain
 ```bash
-# Install globally
+# Claude can run this command for you
 npm install -g brain
+```
 
-# Navigate your knowledge base
+### 2. Tell Claude about your notes
+```
+Claude, I have my notes stored in ~/vault. Use the brain tool to explore them:
+
+brain --notes-root ~/vault overview
+```
+
+### 3. Ask Claude to search and analyze
+```
+Claude, find all my notes about machine learning:
+brain --notes-root ~/vault search "machine learning"
+
+Then read the most relevant one:
+brain --notes-root ~/vault read [note-path-from-search]
+```
+
+### 4. Let Claude navigate relationships
+```
+Claude, show me what's related to my project-ideas note:
+brain --notes-root ~/vault related project-ideas.md
+
+And trace how my ideas connect to my implementations:
+brain --notes-root ~/vault trace ideas.md implementation.md
+```
+
+## 🎯 Key Commands for LLM Agents
+
+### Essential Navigation
+```bash
+# Get complete knowledge base overview - START HERE
 brain --notes-root ~/notes overview
-brain --notes-root ~/notes search "machine learning"
-brain --notes-root ~/notes read project-ideas.md
+
+# Search across all content, filenames, tags
+brain --notes-root ~/notes search "your query"
+
+# Read specific note with full context and connections
+brain --notes-root ~/notes read note-name.md
+
+# List notes in directory structure
+brain --notes-root ~/notes ls [optional-path]
+```
+
+### Advanced Discovery
+```bash
+# Find related notes (direct links, clusters, similar topics)
+brain --notes-root ~/notes related note-name.md
+
+# Trace connection paths between any two notes
+brain --notes-root ~/notes trace source.md target.md
+
+# Pattern-based file finding
+brain --notes-root ~/notes glob "**/*pattern*.md"
+
+# Regex content search
+brain --notes-root ~/notes grep "regex-pattern"
 ```
 
 ## ✨ Features
@@ -23,68 +78,80 @@ brain --notes-root ~/notes read project-ideas.md
 - **⚡ High Performance**: Handles 1000+ notes with intelligent caching
 - **🔄 Live Updates**: Incremental updates when files change
 
+## 💡 Why Brain + Claude Code?
+
+Brain transforms how Claude Code can work with your knowledge base:
+
+- **🎯 Contextual Understanding**: Instead of reading files one by one, Claude gets the full relationship map
+- **🔍 Intelligent Search**: Claude can find exactly what it needs across your entire knowledge base
+- **🧠 Graph Navigation**: Claude understands how your ideas connect and can trace thought processes
+- **⚡ Efficient Token Usage**: Dense, structured output minimizes context consumption
+- **🔄 Real-time Discovery**: Claude can explore relationships and discover relevant notes dynamically
+
 ## 📦 Installation
 
-### NPM (Recommended)
 ```bash
-# Install globally for CLI usage
+# LLM agents can run this directly
 npm install -g brain
 
-# Or run directly without installation
+# Or use without installation
 npx brain --notes-root ~/notes overview
 ```
 
-### From Source
+## 📋 Usage Patterns for LLM Agents
+
+### Pattern 1: Knowledge Base Exploration
 ```bash
-git clone https://github.com/samleeney/brain.git
-cd brain
-npm install
-npm run build
-node dist/cli/index.js --notes-root ~/notes overview
+# 1. Start with overview to understand structure
+brain --notes-root ~/vault overview
+
+# 2. Search for specific topics
+brain --notes-root ~/vault search "topic"
+
+# 3. Read relevant notes with full context
+brain --notes-root ~/vault read [found-note.md]
+
+# 4. Explore connections
+brain --notes-root ~/vault related [found-note.md]
 ```
 
-## 🎯 Commands
-
-### Core Navigation
+### Pattern 2: Research Assistance
 ```bash
-# Get knowledge base overview
-brain --notes-root ~/notes overview
+# Find all notes on a research topic
+brain --notes-root ~/vault search "research query"
 
-# List notes like a file system
-brain --notes-root ~/notes ls
-brain --notes-root ~/notes ls projects/
+# Trace how concepts developed over time
+brain --notes-root ~/vault trace initial-idea.md final-paper.md
 
-# Read a specific note with full context
-brain --notes-root ~/notes read note-name.md
+# Find related research and references
+brain --notes-root ~/vault related research-topic.md
 ```
 
-### Search & Discovery
+### Pattern 3: Project Context Building
 ```bash
-# Multi-strategy search
-brain --notes-root ~/notes search "artificial intelligence"
+# Get project overview
+brain --notes-root ~/vault glob "**/project-name*.md"
 
-# Regex content search
-brain --notes-root ~/notes grep "TODO|FIXME"
+# Find project-related notes
+brain --notes-root ~/vault search "project-name"
 
-# File pattern matching
-brain --notes-root ~/notes glob "**/*react*.md"
-
-# Find related notes
-brain --notes-root ~/notes related project-ideas.md
-
-# Trace connections between notes
-brain --notes-root ~/notes trace idea.md implementation.md
+# Understand project connections
+brain --notes-root ~/vault related project-main.md
 ```
 
-### Performance & Maintenance
+## 🔧 Cache Management
+
+Brain uses intelligent caching for performance. LLM agents should know:
+
 ```bash
-# Cache management
+# Check cache status
 brain --notes-root ~/notes cache stats
-brain --notes-root ~/notes cache rebuild
-brain --notes-root ~/notes cache clear
 
-# Graph statistics
-brain --notes-root ~/notes stats
+# Rebuild if notes have changed significantly
+brain --notes-root ~/notes cache rebuild
+
+# Clear cache if having issues
+brain --notes-root ~/notes cache clear
 ```
 
 ## 📝 Supported Markdown
@@ -159,6 +226,34 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md).
 
+## 🚀 Advanced LLM Usage Tips
+
+### For Claude Code Specifically:
+1. **Always start with `overview`** - gives you the complete knowledge base structure
+2. **Use `search` before `read`** - find the most relevant notes first
+3. **Leverage `related`** - discover connections you might miss
+4. **Use `trace`** - understand how ideas evolved or connect
+5. **Check `cache stats`** - ensure you're working with fresh data
+
+### Sample Claude Code Session:
+```
+User: "Help me find information about my machine learning projects"
+
+Claude: I'll explore your knowledge base to find ML-related content.
+
+brain --notes-root ~/vault overview
+brain --notes-root ~/vault search "machine learning"
+brain --notes-root ~/vault related [most-relevant-result]
+
+Based on your knowledge base, I found several ML projects. Let me read the main one:
+
+brain --notes-root ~/vault read projects/ml-classifier.md
+
+Now I can see this connects to your data processing notes. Let me trace that connection:
+
+brain --notes-root ~/vault trace projects/ml-classifier.md data/preprocessing.md
+```
+
 ## 🔗 Links
 
 - **Repository**: https://github.com/samleeney/brain
@@ -167,4 +262,4 @@ Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md)
 
 ---
 
-*Built for LLMs, by LLMs (with human guidance)*
+*Built for LLMs, by LLMs - Optimized for Claude Code*
