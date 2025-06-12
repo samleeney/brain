@@ -142,13 +142,23 @@ program
                 value: 'current'
               },
               {
-                name: 'Vault directory - With your notes',
-                value: 'vault'
+                name: 'Somewhere else - I\'ll add them manually',
+                value: 'manual'
               }
             ],
             default: 'global'
           }
         ]);
+        
+        if (claudeLocation === 'manual') {
+          console.log('\n📋 Copy these instructions to your preferred CLAUDE.md location:');
+          console.log('');
+          console.log('---START CLAUDE.md CONTENT---');
+          console.log(`# Brain Knowledge Base Navigation\n\n${instructions}`);
+          console.log('---END CLAUDE.md CONTENT---');
+          console.log('');
+          return;
+        }
         
         let claudeMdPath: string;
         const homeDir = process.env.HOME || process.env.USERPROFILE || '';
@@ -164,9 +174,6 @@ program
             break;
           case 'current':
             claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-            break;
-          case 'vault':
-            claudeMdPath = path.join(resolvedVaultPath, 'CLAUDE.md');
             break;
           default:
             claudeMdPath = path.join(homeDir, '.claude', 'CLAUDE.md');
@@ -543,11 +550,25 @@ program
             {
               name: 'Current directory - Project-specific',
               value: 'current'
+            },
+            {
+              name: 'Somewhere else - I\'ll add them manually',
+              value: 'manual'
             }
           ],
           default: 'global'
         }
       ]);
+      
+      if (claudeLocation === 'manual') {
+        console.log('\n📋 Copy these instructions to your preferred CLAUDE.md location:');
+        console.log('');
+        console.log('---START CLAUDE.md CONTENT---');
+        console.log(`# Brain Knowledge Base Navigation\n\n${instructions}`);
+        console.log('---END CLAUDE.md CONTENT---');
+        console.log('');
+        return;
+      }
       
       let claudeMdPath: string;
       const homeDir = process.env.HOME || process.env.USERPROFILE || '';
