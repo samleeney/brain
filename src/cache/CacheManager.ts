@@ -18,7 +18,7 @@ export class CacheManager {
 
   constructor(notesRoot: string) {
     this.notesRoot = notesRoot;
-    this.cacheDir = path.join(os.homedir(), '.ainotes', 'cache');
+    this.cacheDir = path.join(os.homedir(), '.brain', 'cache');
     
     // Create cache file names based on notes root path
     const rootHash = crypto.createHash('md5').update(notesRoot).digest('hex').slice(0, 8);

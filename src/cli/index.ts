@@ -15,8 +15,8 @@ import { CacheManager } from '../cache/CacheManager';
 const program = new Command();
 
 program
-  .name('ainotes')
-  .description('AINodes - Knowledge Base Navigation Tool for LLMs')
+  .name('brain')
+  .description('Brain - Knowledge Base Navigation Tool for LLMs')
   .version('1.0.0')
   .option('-r, --notes-root <path>', 'Root directory of notes (default: current directory)', process.cwd())
   .option('--no-cache', 'Disable caching');

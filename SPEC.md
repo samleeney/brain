@@ -1,8 +1,8 @@
-# AINodes - Knowledge Base Navigation Tool for LLMs
+# Brain - Knowledge Base Navigation Tool for LLMs
 
 ## Project Overview
 
-AINodes is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand a user's markdown-based knowledge base. The tool parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
+Brain is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand a user's markdown-based knowledge base. The tool parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
 
 ## Problem Statement
 
@@ -92,7 +92,7 @@ The tool treats a collection of markdown notes like a codebase, providing famili
 
 ## Command Specifications
 
-### 1. `ainotes overview`
+### 1. `brain overview`
 Display a high-level summary of the knowledge base.
 
 **Output includes:**
@@ -122,7 +122,7 @@ RECENT ACTIVITY:
 - This week: 12 notes
 ```
 
-### 2. `ainotes ls [path]`
+### 2. `brain ls [path]`
 List notes in directory-style format.
 
 **Features:**
@@ -142,7 +142,7 @@ List notes in directory-style format.
 [→X ←Y] means X outgoing links, Y incoming links
 ```
 
-### 3. `ainotes search <query>`
+### 3. `brain search <query>`
 Multi-strategy search across the knowledge base.
 
 **Search strategies:**
@@ -173,7 +173,7 @@ MATCHES:
    - Related: links to auth-system.md
 ```
 
-### 4. `ainotes read <path>`
+### 4. `brain read <path>`
 Display a note with full context.
 
 **Output includes:**
@@ -203,7 +203,7 @@ CONTENT:
 [full content here...]
 ```
 
-### 5. `ainotes grep <pattern>`
+### 5. `brain grep <pattern>`
 Search file contents using regex patterns.
 
 **Features:**
@@ -219,7 +219,7 @@ projects/api/auth.md:67: authentication middleware for Express
 daily/2024-12-01.md:12: fixed authentication bug
 ```
 
-### 6. `ainotes glob <pattern>`
+### 6. `brain glob <pattern>`
 Find files matching glob patterns.
 
 **Features:**
@@ -229,13 +229,13 @@ Find files matching glob patterns.
 
 **Example:**
 ```
-$ ainotes glob "**/*react*.md"
+$ brain glob "**/*react*.md"
 projects/react-app.md
 learning/react-patterns.md
 learning/react-hooks.md
 ```
 
-### 7. `ainotes trace <source> <target>`
+### 7. `brain trace <source> <target>`
 Find connection paths between two notes.
 
 **Output includes:**
@@ -257,7 +257,7 @@ ALTERNATIVE PATH (4 hops):
 idea.md → brainstorm.md → design.md → review.md → implementation.md
 ```
 
-### 8. `ainotes related <path>`
+### 8. `brain related <path>`
 Find notes related to the given note.
 
 **Relationship types:**

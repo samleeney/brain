@@ -1,100 +1,170 @@
-# AINodes - Knowledge Base Navigation Tool for LLMs
+# Brain - Knowledge Base Navigation Tool for LLMs
 
-AINodes is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
+Brain is a command-line tool designed to help Large Language Models (LLMs) efficiently navigate and understand markdown-based knowledge bases. It parses markdown files, builds a graph of connections between notes, and provides a search interface optimized for LLM consumption.
 
-## Features
-
-- **Dual Organization**: Understands both hierarchical folder structure and graph-based wiki-style links
-- **Multiple Search Strategies**: Text content, filename patterns, tags, and graph navigation
-- **LLM-Optimized Output**: Dense, structured text format designed for efficient token usage
-- **Graph Analysis**: Detects hubs, clusters, orphaned notes, and connection paths
-- **Caching System**: Fast incremental updates for large knowledge bases
-- **Performance**: Handles 1000+ notes efficiently
-
-## Installation
+## 🚀 Quick Start
 
 ```bash
-pip install ainotes
+# Install globally
+npm install -g brain
+
+# Navigate your knowledge base
+brain --notes-root ~/notes overview
+brain --notes-root ~/notes search "machine learning"
+brain --notes-root ~/notes read project-ideas.md
 ```
 
-## Usage
+## ✨ Features
 
-### Basic Commands
+- **🔗 Dual Organization**: Understands both hierarchical folders and graph-based wiki-style links
+- **🔍 Multi-Strategy Search**: Text content, filenames, tags, and graph navigation
+- **🤖 LLM-Optimized**: Dense, structured output designed for efficient token usage
+- **📊 Graph Analysis**: Detects hubs, clusters, orphaned notes, and connection paths
+- **⚡ High Performance**: Handles 1000+ notes with intelligent caching
+- **🔄 Live Updates**: Incremental updates when files change
 
+## 📦 Installation
+
+### NPM (Recommended)
 ```bash
-# Get overview of knowledge base
-ainotes overview
+# Install globally for CLI usage
+npm install -g brain
+
+# Or run directly without installation
+npx brain --notes-root ~/notes overview
+```
+
+### From Source
+```bash
+git clone https://github.com/samleeney/brain.git
+cd brain
+npm install
+npm run build
+node dist/cli/index.js --notes-root ~/notes overview
+```
+
+## 🎯 Commands
+
+### Core Navigation
+```bash
+# Get knowledge base overview
+brain --notes-root ~/notes overview
 
 # List notes like a file system
-ainotes ls [path]
+brain --notes-root ~/notes ls
+brain --notes-root ~/notes ls projects/
 
-# Search across all strategies
-ainotes search "your query"
+# Read a specific note with full context
+brain --notes-root ~/notes read note-name.md
+```
 
-# Read a specific note with context
-ainotes read path/to/note.md
+### Search & Discovery
+```bash
+# Multi-strategy search
+brain --notes-root ~/notes search "artificial intelligence"
 
-# Find connections between notes
-ainotes trace source.md target.md
+# Regex content search
+brain --notes-root ~/notes grep "TODO|FIXME"
+
+# File pattern matching
+brain --notes-root ~/notes glob "**/*react*.md"
 
 # Find related notes
-ainotes related note.md
+brain --notes-root ~/notes related project-ideas.md
+
+# Trace connections between notes
+brain --notes-root ~/notes trace idea.md implementation.md
 ```
 
-### Advanced Commands
-
+### Performance & Maintenance
 ```bash
-# Grep-style text search
-ainotes grep "pattern"
-
-# Find files matching patterns
-ainotes glob "**/*react*.md"
-
 # Cache management
-ainotes cache clear
-ainotes cache rebuild
-ainotes cache stats
+brain --notes-root ~/notes cache stats
+brain --notes-root ~/notes cache rebuild
+brain --notes-root ~/notes cache clear
+
+# Graph statistics
+brain --notes-root ~/notes stats
 ```
 
-## Supported Markdown Features
+## 📝 Supported Markdown
 
-- **Wiki-style links**: `[[note-name]]` or `[[note-name|display text]]`
+### Link Types
+- **Wiki links**: `[[note-name]]` or `[[note-name|display text]]`
 - **Markdown links**: `[display text](relative/path/to/note.md)`
 - **Tags**: `#tag-name` anywhere in the document
-- **Headings**: All levels (`#` to `######`) for document structure
+
+### Document Structure
+- **Headings**: All levels (`#` to `######`) for hierarchy
 - **YAML frontmatter**: Optional metadata support
+- **Content analysis**: Word counts, modification dates
 
-## Example Output
+### Link Resolution
+- Exact filename matching
+- Case-insensitive fallbacks
+- Partial name matching
+- Relative path resolution
+- Broken link detection
 
+## 🔧 Example Output
+
+### Overview
 ```
 === KNOWLEDGE BASE OVERVIEW ===
-Total Notes: 234 | Links: 892 | Last Updated: 2024-12-06
-Structure: Mixed (65% in folders, 35% flat files)
+Total Notes: 237 | Links: 180 | Last Updated: 2025-06-12
+Structure: Mixed (15% in folders, 85% flat files)
 
 TOP HUBS (most connected):
-1. "index.md" (87 connections)
-2. "project-ideas.md" (45 connections)
+1. "Project Ideas" (45 connections)
+2. "Daily Notes Index" (23 connections)
 
 CLUSTERS DETECTED:
-- "Web Development" (23 notes, highly connected)
-- "Daily Notes" (156 notes, time-ordered)
+- "Research Papers" (67 notes)
+- "Project Documentation" (34 notes)
+
+ORPHANED NOTES: 12 notes with no connections
+WARNING: 5 broken links detected
 ```
 
-## Configuration
+### Search Results
+```
+SEARCH RESULTS (3 matches):
 
-Create `.ainotes.yml` in your notes directory:
+1. projects/ai-research.md
+   - Match: heading+text (score: 15.2)
+   - Context: # AI Research Project Machine learning approaches...
+   - Graph: 12 connections, Cluster: #2
 
-```yaml
-exclude_patterns:
-  - "*.tmp"
-  - ".obsidian/*"
-  - "_archive/*"
-
-output:
-  max_results: 50
-  context_lines: 2
+2. notes/machine-learning.md
+   - Match: tag+text (score: 8.5)
+   - Context: Deep learning fundamentals #machine-learning
+   - Graph: 8 connections
 ```
 
-## License
+## 🏗️ Architecture
 
-MIT License
+Brain is built with modern TypeScript and optimized for performance:
+
+- **Parser**: Extracts structure and links from markdown files
+- **Graph**: Builds knowledge graph with NetworkX-like algorithms
+- **Search**: Multi-strategy search with relevance scoring  
+- **Cache**: JSON-based persistence with change detection
+- **CLI**: Commander.js for robust command-line interface
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🤝 Contributing
+
+Contributions welcome! Please see our [contributing guidelines](CONTRIBUTING.md).
+
+## 🔗 Links
+
+- **Repository**: https://github.com/samleeney/brain
+- **Issues**: https://github.com/samleeney/brain/issues
+- **NPM Package**: https://www.npmjs.com/package/brain
+
+---
+
+*Built for LLMs, by LLMs (with human guidance)*
