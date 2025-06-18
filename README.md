@@ -80,6 +80,15 @@ Once installed, Brain provides these MCP tools:
 
 Simply ask Claude Code questions about your notes and it will automatically use these tools.
 
+## 🚧 Roadmap
+
+- [x] Parallel semantic search
+- [x] Status CLI commands
+- [x] Auto initialization
+- [ ] Multiple vaults support
+- [ ] Accept other sources (email, etc.)
+- [ ] Include other file types (images, PDFs)
+
 ## 📋 Requirements
 
 - Node.js 16+
