@@ -15,8 +15,6 @@
     "server": "node dist/mcp/server.js",
     "dev-setup": "ts-node src/setup.ts",
     "dev-server": "ts-node src/mcp/server.ts",
-    "update-vectors": "node scripts/update-vectors.js",
-    "clear-vectors": "node scripts/update-vectors.js --clear",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build"
   },
