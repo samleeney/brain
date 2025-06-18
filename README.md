@@ -29,7 +29,7 @@ Brain reads your markdown files, creates semantic embeddings, and provides intel
 
 ### 1. Install Brain
 ```bash
-npm install -g brain-mcp
+npm install -g git+https://github.com/samleeney/brain.git
 ```
 
 ### 2. Setup Configuration
@@ -43,11 +43,6 @@ After running `brain setup`, add Brain to Claude Code:
 
 ```bash
 claude mcp add brain brain server
-```
-
-Or with environment variables if needed:
-```bash
-claude mcp add brain -e OPENAI_API_KEY=your_key -- brain server
 ```
 
 ### 4. Add to Other Agentic Frameworks
