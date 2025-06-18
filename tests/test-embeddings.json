@@ -1,0 +1,9 @@
+{
+  "machine-learning-fundamentals#title": [0.1, 0.9, 0.3, 0.7, 0.5, 0.2, 0.8, 0.4, 0.6, 0.1],
+  "machine-learning-fundamentals#key-learnings": [0.2, 0.8, 0.4, 0.6, 0.9, 0.1, 0.7, 0.3, 0.5, 0.2],
+  "clustering-techniques#title": [0.3, 0.7, 0.5, 0.5, 0.4, 0.8, 0.6, 0.2, 0.9, 0.1],
+  "clustering-techniques#k-means": [0.4, 0.6, 0.8, 0.4, 0.3, 0.9, 0.5, 0.1, 0.7, 0.2],
+  "neural-networks#title": [0.5, 0.5, 0.9, 0.3, 0.2, 0.7, 0.4, 0.8, 0.6, 0.1],
+  "neural-networks#architecture": [0.6, 0.4, 0.7, 0.2, 0.1, 0.6, 0.3, 0.9, 0.5, 0.8],
+  "practical-applications#title": [0.7, 0.3, 0.6, 0.1, 0.8, 0.5, 0.2, 0.4, 0.9, 0.7]
+}

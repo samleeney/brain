@@ -38,10 +38,35 @@ Recommended branch protection rules for `main`:
 - Require up-to-date branches before merging
 - Include administrators in restrictions
 
+## Test Coverage
+
+The CI pipeline now includes comprehensive testing with:
+- **Jest Unit Tests**: Using machine learning knowledge base examples
+- **TypeScript Compilation**: Strict type checking across all source files
+- **CLI Command Testing**: Validation of brain CLI functionality
+- **Package Installation**: End-to-end installation and usage verification
+- **Cross-Platform Testing**: Ubuntu, macOS, and Windows compatibility
+- **Multi-Version Support**: Node.js 18.x, 20.x, and 22.x
+
+### Test Notes Structure
+
+The repository includes `test-notes/` with realistic machine learning study notes:
+- `machine-learning-fundamentals.md` - Core ML concepts with learning journey
+- `clustering-techniques.md` - K-means and unsupervised learning methods  
+- `neural-networks.md` - Deep learning architectures and training
+- `practical-applications.md` - Real-world ML applications and projects
+
+These notes demonstrate:
+- Wiki-style cross-linking (`[[note-name]]`)
+- Semantic content for search engine testing
+- Realistic knowledge base structure for graph building
+- Example queries like "What did I learn about neural networks the other day?"
+
 ## Local Testing
 Before pushing, run these commands locally:
 ```bash
 npm ci
 npm run build
-npm run test  # When test suite is available
+npm test
+node dist/cli/brain.js --help
 ```

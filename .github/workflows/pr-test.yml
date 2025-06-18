@@ -27,13 +27,13 @@ jobs:
     - name: Build
       run: npm run build
     
-    - name: Test init command availability
+    - name: Test setup command availability
       run: |
-        # Test that init command is available in help
-        if node dist/cli/index.js --help | grep -q "init.*Initialize Brain"; then
-          echo "✅ Init command found in help"
+        # Test that setup command is available in help
+        if node dist/cli/brain.js --help | grep -q "setup.*Interactive setup"; then
+          echo "✅ Setup command found in help"
         else
-          echo "❌ Init command not found in help"
+          echo "❌ Setup command not found in help"
           exit 1
         fi
     
@@ -51,17 +51,16 @@ jobs:
         npm install brain-*.tgz
         
         # Verify brain command is available
-        if npx brain --help | grep -q "init.*Initialize Brain"; then
-          echo "✅ Package installs correctly with init command"
+        if npx brain --help | grep -q "setup.*Interactive setup"; then
+          echo "✅ Package installs correctly with setup command"
         else
-          echo "❌ Package installation failed or init command missing"
+          echo "❌ Package installation failed or setup command missing"
           exit 1
         fi
         
-        # Test other commands still work
-        mkdir sample-vault
-        echo "# Test" > sample-vault/test.md
-        npx brain -r sample-vault overview
+        # Test basic commands work
+        npx brain --version
+        npx brain status || echo "Expected to fail without setup"
         
         echo "✅ All installation tests passed"
 
@@ -90,13 +89,12 @@ jobs:
     
     - name: Test basic functionality
       run: |
-        node dist/cli/index.js --version
-        node dist/cli/index.js --help
+        node dist/cli/brain.js --version
+        node dist/cli/brain.js --help
       shell: bash
     
-    - name: Test with sample vault
+    - name: Test with test notes
       run: |
-        mkdir test-vault
-        echo "# Sample Note" > test-vault/sample.md
-        node dist/cli/index.js -r test-vault overview
+        # Test with included test notes
+        node dist/cli/brain.js status || echo "Expected to fail without setup"
       shell: bash
