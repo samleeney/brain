@@ -39,11 +39,12 @@ flowchart TD
 ## ✨ Key Benefits
 
 - **🤖 Native Integration**: Tools appear as built-in Claude Desktop capabilities
-- **🧠 Semantic Understanding**: Finds content by meaning, not just keywords
+- **🧠 Enhanced Semantic Search**: Parallel multi-phrase search with automatic query expansion
 - **📄 Chunk-Level Precision**: Returns specific sections, not entire documents
 - **🏗️ Hierarchical Context**: Preserves heading structure and relationships
+- **⚡ Optimized Performance**: Parallel search execution with intelligent deduplication
 - **🔒 Private & Secure**: Runs locally on your machine
-- **⚡ Persistent Index**: Smart caching with incremental updates
+- **📚 Smart Query Expansion**: Automatic synonyms, context, and temporal term expansion
 
 ## 🚀 Quick Setup
 
@@ -87,10 +88,13 @@ in your 'optimization-notes.md' file...
 Brain provides these native tools in Claude Desktop:
 
 ### `brain_search`
-**Semantic search across your knowledge base**
-- Finds content by meaning, not just keywords
-- Configurable similarity thresholds
-- Returns relevant chunks with context
+**Enhanced parallel semantic search across your knowledge base**
+- **🔍 Multi-phrase search**: Automatically expands queries with synonyms, keywords, and context
+- **⚡ Parallel execution**: Searches multiple query variations simultaneously
+- **🧠 Smart deduplication**: Combines and ranks results from all search variations
+- **🎯 Temporal awareness**: Expands time-related queries (e.g., "this year" → "2024 2025")
+- **📊 Configurable thresholds**: Adjustable similarity scoring
+- **🔄 Fallback option**: Can disable multi-phrase for simple queries
 
 ### `brain_read` 
 **Read specific notes with full context**
@@ -204,6 +208,45 @@ Override configuration with environment variables:
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `BRAIN_CONFIG`: Custom config file path
 
+## 🚀 Enhanced Search Technology
+
+Brain's search engine now features **parallel multi-phrase optimization** for dramatically improved search recall:
+
+### Query Expansion Strategies
+1. **Keyword Extraction**: Removes stop words, focuses on meaningful terms
+2. **Synonym Expansion**: `ski` → `skiing snow winter alpine slopes powder`
+3. **Contextual Terms**: `travel` → `booking flight hotel accommodation`
+4. **Temporal Expansion**: `this year` → `2024 2025`, `skiing` → `december january february march april`
+
+### Parallel Search Process
+```mermaid
+flowchart LR
+    A[Original Query: "skiing this year"] --> B[Query Expansion]
+    B --> C["skiing this year"]
+    B --> D["ski snow winter 2024 2025"]
+    B --> E["skiing mountain resort"]
+    B --> F["ski december january february"]
+    
+    C --> G[Parallel Embedding]
+    D --> G
+    E --> G
+    F --> G
+    
+    G --> H[Vector Search]
+    H --> I[Deduplicate & Rank]
+    I --> J[Best Results]
+    
+    style B fill:#e3f2fd
+    style G fill:#f3e5f5
+    style I fill:#e8f5e8
+```
+
+### Performance Benefits
+- **Higher Recall**: Finds relevant content that single queries miss
+- **Better Context**: Automatic expansion improves semantic matching
+- **Parallel Execution**: Multiple searches run simultaneously
+- **Smart Ranking**: Results deduplicated and sorted by relevance
+
 ## 🏗️ Architecture
 
 Brain is built with TypeScript and optimized for semantic search:
@@ -211,7 +254,7 @@ Brain is built with TypeScript and optimized for semantic search:
 - **ChunkingService**: Intelligently splits markdown into semantic sections
 - **EmbeddingService**: OpenAI text-embedding-3-large integration
 - **VectorStore**: Efficient similarity search with persistent storage
-- **SearchEngine**: Semantic similarity with configurable thresholds
+- **SearchEngine**: Enhanced parallel multi-phrase semantic search with query expansion
 - **GraphBuilder**: Maintains note relationships and link structure
 - **CacheManager**: Smart caching for both graph data and embeddings
 - **MCP Server**: Model Context Protocol integration for Claude Desktop
