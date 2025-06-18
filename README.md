@@ -340,7 +340,7 @@ brain clear
 4. Check Claude Desktop logs for errors
 
 ### "OpenAI API key not configured"
-1. Re-run `brain-setup` to set your API key
+1. Re-run `brain setup` to set your API key
 2. Check the `brain-mcp-config.json` file
 3. Verify the API key format (starts with `sk-`)
 
