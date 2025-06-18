@@ -4,42 +4,26 @@
 
 Brain transforms your markdown notes into an intelligent, searchable knowledge base that integrates with Claude Desktop and other MCP-compatible systems.
 
-## 🧠 Overview
-
-```mermaid
-flowchart LR
-    A[📄 Your Notes] --> B[🔍 Smart Note Selection<br/>Vector Similarity Search]
-    B --> C[📝 Relevant Notes to<br/>LLM Context]
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-```
-
-Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude naturally: "What did I learn about React?" and it automatically searches your notes.
-
-### How It Works
+## 🧠 How Brain Works
 
 ```mermaid
 flowchart TD
-    A[📄 Your Notes] --> B[🔧 Chunk & Generate Embeddings<br/>Headings, Paragraphs, Code<br/>OpenAI text-embedding-3-large]
-    B --> C[💾 Vector Store<br/>Similarity Search Index]
+    A[📄 Your Notes] --> B[🔧 Chunk & Embed]
+    B --> C[💾 Vector Store]
     
-    D[❓ Your Query<br/>What did I learn about React?] --> E[🔍 Calculate Similarity<br/>Query vs All Chunks]
+    D[❓ Your Query] --> E[🔍 Find Similar Chunks]
     C --> E
     
-    E --> F{📊 Similar Enough?<br/>Score > Threshold}
-    F -->|No| G[⏭️ Ignore Chunk]
-    F -->|Yes| H[✅ Add to Results]
-    
-    G --> I[Continue to Next Chunk]
-    H --> I
-    I --> J[📝 Return Relevant Chunks<br/>to Claude/MCP Client]
+    E --> F{Similar?}
+    F -->|Yes| G[📝 Return to Claude]
+    F -->|No| H[Skip]
     
     style A fill:#e1f5fe
     style D fill:#f3e5f5
-    style J fill:#e8f5e8
+    style G fill:#e8f5e8
 ```
+
+Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude naturally: "What did I learn about React?" and it automatically searches your notes.
 
 ## 🚀 Install
 
