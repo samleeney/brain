@@ -86,7 +86,7 @@ Simply ask Claude Code questions about your notes and it will automatically use 
 - [x] Status CLI commands
 - [x] Auto initialization
 - [ ] Multiple vaults support
-- [ ] Accept other sources (email, etc.)
+- [ ] Accept other sources (email, todo lists, etc.)
 - [ ] Include other file types (images, PDFs)
 
 ## 📋 Requirements
