@@ -7,28 +7,39 @@ Brain transforms your markdown notes into an intelligent, searchable knowledge b
 ## 🧠 Overview
 
 ```mermaid
-flowchart TD
-    A[📄 Your Notes] --> B[🔧 Chunk Notes<br/>Headings, Paragraphs, Code]
-    B --> C[🧮 Generate Embeddings<br/>OpenAI text-embedding-3-large]
-    C --> D[💾 Vector Store<br/>Similarity Search Index]
-    
-    E[❓ Your Query<br/>What did I learn about React?] --> F[🔍 Calculate Similarity<br/>Query vs All Chunks]
-    D --> F
-    
-    F --> G{📊 Similar Enough?<br/>Score > Threshold}
-    G -->|No| H[⏭️ Ignore Chunk]
-    G -->|Yes| I[✅ Add to Results]
-    
-    H --> J[Continue to Next Chunk]
-    I --> J
-    J --> K[📝 Return Relevant Chunks<br/>to Claude/MCP Client]
+flowchart LR
+    A[📄 Your Notes] --> B[🔍 Smart Note Selection<br/>Vector Similarity Search]
+    B --> C[📝 Relevant Notes to<br/>LLM Context]
     
     style A fill:#e1f5fe
-    style E fill:#f3e5f5
-    style K fill:#e8f5e8
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
 ```
 
 Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude naturally: "What did I learn about React?" and it automatically searches your notes.
+
+### How It Works
+
+```mermaid
+flowchart TD
+    A[📄 Your Notes] --> B[🔧 Chunk & Generate Embeddings<br/>Headings, Paragraphs, Code<br/>OpenAI text-embedding-3-large]
+    B --> C[💾 Vector Store<br/>Similarity Search Index]
+    
+    D[❓ Your Query<br/>What did I learn about React?] --> E[🔍 Calculate Similarity<br/>Query vs All Chunks]
+    C --> E
+    
+    E --> F{📊 Similar Enough?<br/>Score > Threshold}
+    F -->|No| G[⏭️ Ignore Chunk]
+    F -->|Yes| H[✅ Add to Results]
+    
+    G --> I[Continue to Next Chunk]
+    H --> I
+    I --> J[📝 Return Relevant Chunks<br/>to Claude/MCP Client]
+    
+    style A fill:#e1f5fe
+    style D fill:#f3e5f5
+    style J fill:#e8f5e8
+```
 
 ## 🚀 Install
 
