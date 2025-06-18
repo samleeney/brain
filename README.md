@@ -2,7 +2,7 @@
 
 **Semantic knowledge base access for your markdown notes via Model Context Protocol**
 
-Brain transforms your markdown notes into an intelligent, searchable knowledge base that integrates with Claude Desktop and other MCP-compatible systems.
+Brain transforms your markdown notes into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
 
 ## 🧠 How Brain Works
 
@@ -15,7 +15,7 @@ flowchart TD
     C --> E
     
     E --> F{Similar?}
-    F -->|Yes| G[📝 Return to Claude]
+    F -->|Yes| G[📝 Add to LLM Context]
     F -->|No| H[Skip]
     
     style A fill:#e1f5fe
@@ -23,7 +23,7 @@ flowchart TD
     style G fill:#e8f5e8
 ```
 
-Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude naturally: "What did I learn about React?" and it automatically searches your notes.
+Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes.
 
 ## 🚀 Install
 
@@ -38,27 +38,16 @@ brain setup
 ```
 This will ask for your notes directory and OpenAI API key.
 
-### 3. Add to Claude Desktop
-Add this to your Claude Desktop MCP configuration:
+### 3. Add to Claude Code
+Brain integrates automatically with Claude Code - no additional configuration needed.
 
-```json
-{
-  "mcpServers": {
-    "brain": {
-      "command": "brain-mcp",
-      "args": ["server"]
-    }
-  }
-}
-```
-
-### 4. Add to Other MCP Systems
+### 4. Add to Other Agentic Frameworks
 Brain is a standard MCP server. For other MCP-compatible systems, use:
 - **Command**: `brain-mcp`  
 - **Args**: `["server"]`
 - **Protocol**: Model Context Protocol v1.0
 
-The server runs on stdio and is compatible with any MCP client.
+The server runs on stdio and is compatible with any MCP client or agentic framework.
 
 ## 🔧 Manual Commands
 
@@ -85,11 +74,11 @@ Once installed, Brain provides these MCP tools:
 - **brain_related** - Find connected notes
 - **brain_list** - Browse notes by directory
 
-Simply ask Claude questions about your notes and it will automatically use these tools.
+Simply ask Claude Code questions about your notes and it will automatically use these tools.
 
 ## 📋 Requirements
 
 - Node.js 16+
 - OpenAI API key (for embeddings)
 - Markdown notes directory
-- MCP-compatible client (Claude Desktop, etc.)
+- MCP-compatible client (Claude Code, etc.)
