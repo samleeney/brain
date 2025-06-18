@@ -16,7 +16,14 @@ import { EmbeddingService } from '../embedding/EmbeddingService';
 const SearchSchema = {
   query: z.string().describe('Search query for semantic similarity search'),
   maxResults: z.number().min(1).max(50).default(10).describe('Maximum number of results to return'),
-  threshold: z.number().min(0).max(1).default(0.7).describe('Minimum similarity score threshold (0-1)')
+  threshold: z.number().min(0).max(1).default(0.7).describe('Minimum similarity score threshold (0-1)'),
+  enableMultiPhrase: z.boolean().default(true).describe('Enable parallel multi-phrase search optimization')
+};
+
+const ComprehensiveSearchSchema = {
+  query: z.string().describe('Complex research query for comprehensive multi-strategy search'),
+  maxResults: z.number().min(1).max(30).default(15).describe('Maximum number of results to return'),
+  threshold: z.number().min(0).max(1).default(0.3).describe('Base similarity score threshold (0-1)')
 };
 
 const ReadSchema = {
@@ -103,7 +110,7 @@ export class BrainMCPServer {
     // Register brain_search tool
     this.mcpServer.tool(
       'brain_search',
-      'Search through knowledge base using semantic similarity',
+      'Search through knowledge base using enhanced parallel semantic similarity with automatic query expansion',
       SearchSchema,
       async (params) => {
         if (!this.searchEngine || !this.graph) {
@@ -115,7 +122,41 @@ export class BrainMCPServer {
           throw new Error('OPENAI_API_KEY environment variable not set');
         }
 
-        const results = await this.searchEngine.semanticSearch(
+        const results = await this.searchEngine.enhancedSearch(
+          params.query,
+          apiKey,
+          params.maxResults,
+          params.threshold,
+          params.enableMultiPhrase
+        );
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: this.formatter.formatSemanticSearchResults(results, this.graph)
+            }
+          ]
+        };
+      }
+    );
+
+    // Register brain_research tool for comprehensive searches
+    this.mcpServer.tool(
+      'brain_research',
+      'Comprehensive research search using multiple strategies in parallel for complex queries',
+      ComprehensiveSearchSchema,
+      async (params) => {
+        if (!this.searchEngine || !this.graph) {
+          throw new Error('Search engine not initialized');
+        }
+
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+          throw new Error('OPENAI_API_KEY environment variable not set');
+        }
+
+        const results = await this.searchEngine.comprehensiveSearch(
           params.query,
           apiKey,
           params.maxResults,
