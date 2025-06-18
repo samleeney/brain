@@ -3,112 +3,86 @@
  */
 
 import * as path from 'path';
-import { KnowledgeGraph, SearchResult, GraphNode } from '../models/types';
+import { KnowledgeGraph, GraphNode } from '../models/types';
 
 export class LLMFormatter {
   formatOverview(graph: KnowledgeGraph): string {
     const totalNotes = graph.nodes.size;
     if (totalNotes === 0) {
-      return '=== KNOWLEDGE BASE OVERVIEW ===\nNo notes found.';
-    }
-
-    // Calculate statistics
-    const totalLinks = Array.from(graph.nodes.values())
-      .reduce((sum, node) => sum + node.note.outgoingLinks.length, 0);
-    const validLinks = totalLinks - graph.brokenLinks.length;
-
-    // Directory structure analysis
-    const dirs = new Set<string>();
-    let flatFiles = 0;
-    
-    for (const node of graph.nodes.values()) {
-      const pathParts = node.note.relativePath.split(path.sep);
-      if (pathParts.length > 1) {
-        dirs.add(path.dirname(node.note.relativePath));
-      } else {
-        flatFiles++;
-      }
-    }
-
-    const folderPercent = Math.round((dirs.size * 100) / Math.max(1, totalNotes));
-    const flatPercent = Math.round((flatFiles * 100) / Math.max(1, totalNotes));
-
-    // Recent activity
-    const now = new Date();
-    let todayCount = 0;
-    let weekCount = 0;
-
-    for (const node of graph.nodes.values()) {
-      if (node.note.lastModified) {
-        const daysAgo = (now.getTime() - node.note.lastModified.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysAgo < 1) {
-          todayCount++;
-        }
-        if (daysAgo <= 7) {
-          weekCount++;
-        }
-      }
+      return 'KNOWLEDGE BASE: Empty';
     }
 
     const output: string[] = [];
     output.push('=== KNOWLEDGE BASE OVERVIEW ===');
-    output.push(`Total Notes: ${totalNotes} | Links: ${validLinks} | Last Updated: ${now.toISOString().split('T')[0]}`);
+    
+    // Basic stats
+    const validLinks = Array.from(graph.nodes.values()).reduce((sum, node) => sum + node.note.outgoingLinks.filter(l => !l.isBroken).length, 0);
+    output.push(`${totalNotes} notes | ${validLinks} links | Vector search enabled\n`);
 
-    if (dirs.size > 0) {
-      output.push(`Structure: Mixed (${folderPercent}% in folders, ${flatPercent}% flat files)`);
-    } else {
-      output.push('Structure: Flat (all files in root)');
-    }
-
-    // Top hubs
-    if (graph.hubNodes.length > 0) {
-      output.push('\nTOP HUBS (most connected):');
-      for (let i = 0; i < Math.min(5, graph.hubNodes.length); i++) {
-        const hubPath = graph.hubNodes[i];
-        const node = graph.nodes.get(hubPath);
-        if (node) {
-          const connections = node.inDegree + node.outDegree;
-          output.push(`${i + 1}. "${node.note.title}" (${connections} connections)`);
-        }
+    // Topic clusters by directory structure  
+    const topicClusters = new Map<string, { count: number; keyNotes: string[] }>();
+    for (const node of graph.nodes.values()) {
+      const dir = path.dirname(node.note.relativePath);
+      const topic = dir === '.' ? 'root' : dir.split('/')[0];
+      
+      if (!topicClusters.has(topic)) {
+        topicClusters.set(topic, { count: 0, keyNotes: [] });
+      }
+      
+      const cluster = topicClusters.get(topic)!;
+      cluster.count++;
+      
+      // Track highly connected notes (>10 connections)
+      const connections = node.inDegree + node.outDegree;
+      if (connections > 10) {
+        cluster.keyNotes.push(node.note.title);
       }
     }
 
-    // Clusters
-    if (graph.clusters.length > 0) {
-      output.push('\nCLUSTERS DETECTED:');
-      for (let i = 0; i < Math.min(3, graph.clusters.length); i++) {
-        const cluster = graph.clusters[i];
-        const clusterSize = cluster.size;
-        const sampleNode = Array.from(cluster)[0];
-        const node = graph.nodes.get(sampleNode);
-        const clusterName = node ? 
-          path.dirname(node.note.relativePath) !== '.' ? 
-            path.basename(path.dirname(node.note.relativePath)) : 'Root'
-          : `Cluster ${i + 1}`;
-        output.push(`- "${clusterName}" (${clusterSize} notes)`);
+    // Display topic areas
+    output.push('TOPIC AREAS:');
+    for (const [topic, data] of Array.from(topicClusters.entries()).sort((a, b) => b[1].count - a[1].count)) {
+      const keyNotesSummary = data.keyNotes.length > 0 ? ` (key: ${data.keyNotes.slice(0, 2).join(', ')}${data.keyNotes.length > 2 ? '...' : ''})` : '';
+      output.push(`• ${topic}: ${data.count} notes${keyNotesSummary}`);
+    }
+
+    // Top hub notes
+    const topHubs = Array.from(graph.nodes.values())
+      .sort((a, b) => (b.inDegree + b.outDegree) - (a.inDegree + a.outDegree))
+      .slice(0, 3);
+    
+    if (topHubs.length > 0) {
+      output.push('\nKEY HUBS:');
+      for (const node of topHubs) {
+        const connections = node.inDegree + node.outDegree;
+        output.push(`• ${node.note.title} (${connections} connections)`);
       }
     }
 
-    // Orphaned notes
-    if (graph.orphanNodes.length > 0) {
-      output.push(`\nORPHANED NOTES: ${graph.orphanNodes.length} notes with no connections`);
+    // Recent activity  
+    const now = new Date();
+    const recentNotes = Array.from(graph.nodes.values())
+      .filter(node => {
+        if (!node.note.lastModified) return false;
+        const daysAgo = (now.getTime() - node.note.lastModified.getTime()) / (1000 * 60 * 60 * 24);
+        return daysAgo <= 3;
+      })
+      .sort((a, b) => (b.note.lastModified?.getTime() || 0) - (a.note.lastModified?.getTime() || 0))
+      .slice(0, 3);
+
+    if (recentNotes.length > 0) {
+      output.push('\nRECENT UPDATES:');
+      for (const node of recentNotes) {
+        const daysAgo = Math.floor((now.getTime() - (node.note.lastModified?.getTime() || 0)) / (1000 * 60 * 60 * 24));
+        const timeStr = daysAgo === 0 ? 'today' : `${daysAgo}d ago`;
+        output.push(`• ${node.note.title} (${timeStr})`);
+      }
     }
 
-    // Recent activity
-    if (todayCount > 0 || weekCount > 0) {
-      output.push('\nRECENT ACTIVITY:');
-      if (todayCount > 0) {
-        output.push(`- Modified today: ${todayCount} notes`);
-      }
-      if (weekCount > todayCount) {
-        output.push(`- This week: ${weekCount} notes`);
-      }
-    }
-
-    // Broken links warning
-    if (graph.brokenLinks.length > 0) {
-      output.push(`\nWARNING: ${graph.brokenLinks.length} broken links detected`);
-    }
+    // Usage instructions
+    output.push('\nROUTING:');
+    output.push('• brain check "<query>" - Check if knowledge base is relevant');
+    output.push('• brain search "<query>" - Traditional search if relevant');
 
     return output.join('\n');
   }
@@ -182,46 +156,6 @@ export class LLMFormatter {
     return output.join('\n');
   }
 
-  formatSearchResults(results: SearchResult[]): string {
-    if (results.length === 0) {
-      return 'No results found.';
-    }
-
-    const output: string[] = [];
-    output.push(`SEARCH RESULTS (${results.length} matches):\n`);
-
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      const node = result.graphNode;
-      const relativePath = node ? node.note.relativePath : result.notePath;
-
-      output.push(`${i + 1}. ${relativePath}`);
-      output.push(`   - Match: ${result.matchType} (score: ${result.score.toFixed(1)})`);
-
-      if (result.context) {
-        output.push(`   - Context: ${result.context}`);
-      }
-
-      if (result.lineNumber) {
-        output.push(`   - Line: ${result.lineNumber}`);
-      }
-
-      if (node) {
-        const connections = node.inDegree + node.outDegree;
-        if (connections > 0) {
-          output.push(`   - Graph: ${connections} connections`);
-        }
-
-        if (node.clusterId !== null) {
-          output.push(`   - Cluster: #${node.clusterId}`);
-        }
-      }
-
-      output.push(''); // Empty line between results
-    }
-
-    return output.join('\n');
-  }
 
   formatNoteRead(node: GraphNode, content?: string): string {
     const output: string[] = [];
@@ -280,14 +214,64 @@ export class LLMFormatter {
     return output.join('\n');
   }
 
-  formatGrepResults(results: Array<{ file: string; lineNumber: number; line: string }>): string {
+
+  formatSemanticSearchResults(results: Array<{
+    notePath: string;
+    chunkId: string;
+    similarity: number;
+    snippet: string;
+    headingContext: string[];
+    chunkType: string;
+  }>, graph: KnowledgeGraph): string {
     if (results.length === 0) {
-      return 'No matches found.';
+      return 'No relevant content found. Try lowering the similarity threshold with the -t option.';
     }
 
     const output: string[] = [];
+    output.push('=== SEMANTIC SEARCH RESULTS ===\n');
+
+    // Group results by note to avoid duplicates
+    const resultsByNote = new Map<string, typeof results>();
     for (const result of results) {
-      output.push(`${result.file}:${result.lineNumber}: ${result.line}`);
+      if (!resultsByNote.has(result.notePath)) {
+        resultsByNote.set(result.notePath, []);
+      }
+      resultsByNote.get(result.notePath)!.push(result);
+    }
+
+    let resultCount = 0;
+    for (const [notePath, noteResults] of resultsByNote.entries()) {
+      if (resultCount >= results.length) break;
+      
+      const node = graph.nodes.get(notePath);
+      const noteTitle = node ? node.note.title : path.basename(notePath);
+      const relativePath = node ? node.note.relativePath : notePath;
+      
+      // Sort by similarity and take best chunk
+      const bestResult = noteResults.sort((a, b) => b.similarity - a.similarity)[0];
+      
+      output.push(`📄 ${noteTitle}`);
+      output.push(`   Path: ${relativePath}`);
+      output.push(`   Similarity: ${(bestResult.similarity * 100).toFixed(1)}%`);
+      
+      if (bestResult.headingContext.length > 0) {
+        output.push(`   Section: ${bestResult.headingContext.join(' > ')}`);
+      }
+      
+      output.push(`   Content: ${bestResult.snippet}`);
+      
+      // Show additional chunks if they're significantly relevant
+      const additionalChunks = noteResults.slice(1).filter(r => r.similarity > 0.4);
+      if (additionalChunks.length > 0) {
+        output.push(`   + ${additionalChunks.length} more relevant section(s)`);
+      }
+      
+      output.push('');
+      resultCount++;
+    }
+
+    if (resultsByNote.size === 0) {
+      return 'No content found above the similarity threshold. Try using a lower threshold with -t option.';
     }
 
     return output.join('\n');

@@ -1,19 +1,20 @@
 {
-  "name": "brain",
+  "name": "brain-mcp",
   "version": "1.0.0",
-  "description": "Brain - Knowledge Base Navigation Tool for LLMs. Navigate and understand markdown-based knowledge bases with graph analysis, multi-strategy search, and LLM-optimized output.",
-  "main": "dist/index.js",
+  "description": "Brain MCP Server - Semantic knowledge base access for Claude Desktop via Model Context Protocol. Provides intelligent search and navigation of markdown notes through native MCP tools.",
+  "main": "dist/mcp/server.js",
   "bin": {
-    "brain": "./dist/cli/index.js"
+    "brain-setup": "./dist/setup.js"
   },
   "directories": {
-    "test": "tests"
+    "docs": "docs"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/cli/index.js",
-    "dev": "ts-node src/cli/index.ts",
-    "watch": "nodemon --exec ts-node src/cli/index.ts",
+    "setup": "node dist/setup.js",
+    "server": "node dist/mcp/server.js",
+    "dev-setup": "ts-node src/setup.ts",
+    "dev-server": "ts-node src/mcp/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build"
   },
@@ -22,14 +23,16 @@
     "url": "git+https://github.com/samleeney/brain.git"
   },
   "keywords": [
-    "markdown",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "semantic-search",
     "knowledge-base",
-    "llm",
-    "cli",
-    "graph",
+    "markdown",
     "notes",
-    "search",
-    "ai"
+    "llm",
+    "ai",
+    "embeddings"
   ],
   "author": "Sam Leeney <sam@samleeney.com>",
   "license": "MIT",
@@ -39,15 +42,17 @@
   },
   "homepage": "https://github.com/samleeney/brain#readme",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.3",
     "@types/inquirer": "^9.0.8",
-    "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.2",
     "graphlib": "^2.1.8",
     "gray-matter": "^4.0.3",
     "inquirer": "^12.6.3",
     "js-yaml": "^4.1.0",
-    "markdown-it": "^14.1.0"
+    "markdown-it": "^14.1.0",
+    "openai": "^5.3.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/graphlib": "^2.1.12",
