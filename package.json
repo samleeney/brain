@@ -1,7 +1,7 @@
 {
   "name": "brain-mcp",
   "version": "1.0.0",
-  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of markdown notes through native MCP tools.",
+  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of markdown notes, Obsidian vaults, and knowledge bases through native MCP tools.",
   "main": "dist/mcp/server.js",
   "bin": {
     "brain": "./dist/cli/brain.js"
@@ -31,12 +31,15 @@
     "knowledge-base",
     "markdown",
     "notes",
+    "obsidian",
+    "vault",
+    "zettelkasten",
     "llm",
     "ai",
     "embeddings"
   ],
-  "author": "Sam Leeney <sam@samleeney.com>",
-  "license": "MIT",
+  "author": "Sam Leeney <sakl2@cam.ac.uk>",
+  "license": "AGPL-3.0",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/samleeney/brain/issues"
