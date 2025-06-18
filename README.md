@@ -12,7 +12,7 @@ flowchart TD
     B --> C[🧮 Generate Embeddings<br/>OpenAI text-embedding-3-large]
     C --> D[💾 Vector Store<br/>Similarity Search Index]
     
-    E[❓ Your Query<br/>"What did I learn about React?"] --> F[🔍 Calculate Similarity<br/>Query vs All Chunks]
+    E[❓ Your Query<br/>What did I learn about React?] --> F[🔍 Calculate Similarity<br/>Query vs All Chunks]
     D --> F
     
     F --> G{📊 Similar Enough?<br/>Score > Threshold}
