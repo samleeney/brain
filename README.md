@@ -287,30 +287,6 @@ Brain is built with TypeScript and optimized for semantic search:
 - **OpenAI API key** for embeddings (text-embedding-3-large)
 - **Markdown files** in a local directory
 
-## 🛠️ Troubleshooting
-
-### Search Results Not Up to Date
-If your search results don't reflect recent file changes:
-
-```bash
-# Quick fix: Update changed files only
-brain update
-
-# Nuclear option: Clear and rebuild everything
-brain clear
-```
-
-### Server Performance Issues
-- **Slow startup**: Vector store rebuilds on server restart
-- **Manual updates**: Use update commands instead of restarting
-- **Cache issues**: Clear vectors if search behaves unexpectedly
-
-### Common Issues
-- **Missing results**: Try `brain update` to refresh embeddings
-- **Outdated content**: Vector store updates incrementally based on file timestamps
-- **API errors**: Ensure `OPENAI_API_KEY` environment variable is set
-- **Configuration issues**: Use `brain status` to check setup
-
 ## 🎯 Use Cases
 
 ### Personal Knowledge Management
@@ -331,7 +307,7 @@ brain clear
 - Reference materials organized semantically
 - Research papers with citation networks
 
-## 🐛 Troubleshooting
+## 🛠️ Troubleshooting
 
 ### Brain tools don't appear in Claude Desktop
 1. Check Claude Desktop configuration file location
@@ -347,8 +323,17 @@ brain clear
 ### No search results found
 1. Lower the similarity threshold in searches
 2. Check that notes contain relevant content
-3. Verify embeddings were built (check `.brain-vectors.json`)
-4. Try different search terms or phrases
+3. Try `brain update` to refresh embeddings
+
+### Search results not up to date
+1. Run `brain update` to update changed files
+2. Use `brain clear` to rebuild everything if needed
+3. Check `brain status` to verify configuration
+
+### Performance issues
+- **Slow startup**: Vector store rebuilds on server restart
+- **Solution**: Use `brain update` instead of restarting
+- **Cache issues**: Use `brain clear` if search behaves unexpectedly
 
 ### Server startup errors
 1. Ensure Node.js 16+ is installed
