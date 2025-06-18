@@ -1,8 +1,8 @@
 # Brain MCP Server
 
-**Semantic knowledge base access for your markdown notes and Obsidian vaults via Model Context Protocol**
+**Semantic knowledge base access for your markdown notes via Model Context Protocol**
 
-Brain transforms your markdown notes, Obsidian vaults, and knowledge bases into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
+Brain transforms your markdown notes (such as Obsidian vaults) into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
 
 ## 🧠 How Brain Works
 
@@ -23,7 +23,7 @@ flowchart TD
     style G fill:#e8f5e8
 ```
 
-Brain reads your markdown files, Obsidian vaults, and note collections, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes and Obsidian vault.
+Brain reads your markdown files (including Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes.
 
 ## 🚀 Install
 
@@ -84,5 +84,5 @@ Simply ask Claude Code questions about your notes and it will automatically use 
 
 - Node.js 16+
 - OpenAI API key (for embeddings)
-- Markdown notes directory or Obsidian vault
+- Markdown notes directory (e.g., Obsidian vault)
 - MCP-compatible client (Claude Code, etc.)

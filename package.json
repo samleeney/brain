@@ -1,7 +1,7 @@
 {
   "name": "brain-mcp",
   "version": "1.0.0",
-  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of markdown notes, Obsidian vaults, and knowledge bases through native MCP tools.",
+  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of markdown notes (such as Obsidian vaults) through native MCP tools.",
   "main": "dist/mcp/server.js",
   "bin": {
     "brain": "./dist/cli/brain.js"
