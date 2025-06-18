@@ -1,0 +1,9 @@
+dist/
+node_modules/
+coverage/
+*.json
+*.md
+*.yml
+*.yaml
+.brain-cache.json
+.brain-vectors.json

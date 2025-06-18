@@ -2,15 +2,27 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: false
     
     - name: Use Node.js
       uses: actions/setup-node@v4
@@ -22,40 +34,24 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Run tests
+      run: npm test
+    
     - name: Build
       run: npm run build
     
-    - name: Test before release
+    - name: Verify build
       run: |
-        # Basic smoke tests
-        node dist/cli/index.js --version
+        # Test CLI commands
+        node dist/cli/brain.js --version
+        node dist/cli/brain.js --help
         
         # Test package can be packed
         npm pack
         echo "✅ Package ready for release"
     
-    - name: Publish to NPM
-      run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
+    - name: Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes
-          
-          See [CHANGELOG.md](https://github.com/samleeney/brain/blob/main/CHANGELOG.md) for details.
-          
-          ## Installation
-          
-          ```bash
-          npm install -g brain
-          brain init
-          ```
-        draft: false
-        prerelease: false
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npx semantic-release

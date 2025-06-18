@@ -56,6 +56,7 @@ export class BrainMCPServer {
   private graph: KnowledgeGraph | null = null;
   private vectorStore: VectorStore | null = null;
   private embeddingService: EmbeddingService | null = null;
+  private apiKey: string | null = null;
 
   constructor() {
     this.mcpServer = new McpServer({
@@ -85,9 +86,9 @@ export class BrainMCPServer {
       this.searchEngine = new SearchEngine(this.graph, this.vaultPath);
       
       // Initialize embedding service and vector store if API key is available
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (apiKey) {
-        this.embeddingService = new EmbeddingService(apiKey);
+      this.apiKey = config.openaiApiKey || process.env.OPENAI_API_KEY;
+      if (this.apiKey) {
+        this.embeddingService = new EmbeddingService(this.apiKey);
         this.vectorStore = new VectorStore(this.vaultPath);
         
         // Generate embeddings for all chunks if they exist
@@ -117,14 +118,13 @@ export class BrainMCPServer {
           throw new Error('Search engine not initialized');
         }
 
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) {
-          throw new Error('OPENAI_API_KEY environment variable not set');
+        if (!this.apiKey) {
+          throw new Error('OpenAI API key not configured. Please run setup or set OPENAI_API_KEY environment variable.');
         }
 
         const results = await this.searchEngine.enhancedSearch(
           params.query,
-          apiKey,
+          this.apiKey,
           params.maxResults,
           params.threshold,
           params.enableMultiPhrase
@@ -151,14 +151,13 @@ export class BrainMCPServer {
           throw new Error('Search engine not initialized');
         }
 
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) {
-          throw new Error('OPENAI_API_KEY environment variable not set');
+        if (!this.apiKey) {
+          throw new Error('OpenAI API key not configured. Please run setup or set OPENAI_API_KEY environment variable.');
         }
 
         const results = await this.searchEngine.comprehensiveSearch(
           params.query,
-          apiKey,
+          this.apiKey,
           params.maxResults,
           params.threshold
         );

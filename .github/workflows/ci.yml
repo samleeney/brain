@@ -76,9 +76,23 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Run ESLint
+      run: npm run lint
+    
     - name: Check formatting
-      run: |
-        # Check if TypeScript files are properly formatted
-        echo "Checking TypeScript code style..."
-        npx tsc --noEmit
-        echo "✅ TypeScript check passed"
+      run: npm run format:check
+    
+    - name: Type check
+      run: npm run typecheck
+    
+    - name: Run tests with coverage
+      run: npm run test:coverage
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
