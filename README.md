@@ -202,10 +202,26 @@ your-notes/
 - **Code Blocks**: Preserved as distinct chunks
 - **Lists & Tables**: Semantically grouped
 
+### Manual Vector Store Updates
+Keep your search index up to date with manual update commands:
+
+```bash
+# Update only changed files (recommended for daily use)
+npm run update-vectors
+
+# Clear and rebuild all vectors (for troubleshooting)
+npm run clear-vectors
+```
+
+**When to use manual updates:**
+- 📝 **After editing notes**: Update vectors for changed files only
+- 🔄 **Troubleshooting search**: Clear and rebuild everything
+- ⚡ **Performance**: Faster than restarting the MCP server
+
 ### Environment Variables
 Override configuration with environment variables:
 - `BRAIN_NOTES_ROOT`: Notes directory path
-- `OPENAI_API_KEY`: Your OpenAI API key
+- `OPENAI_API_KEY`: Your OpenAI API key (required for vector updates)
 - `BRAIN_CONFIG`: Custom config file path
 
 ## 🚀 Enhanced Search Technology
@@ -265,6 +281,29 @@ Brain is built with TypeScript and optimized for semantic search:
 - **Claude Desktop** application
 - **OpenAI API key** for embeddings (text-embedding-3-large)
 - **Markdown files** in a local directory
+
+## 🛠️ Troubleshooting
+
+### Search Results Not Up to Date
+If your search results don't reflect recent file changes:
+
+```bash
+# Quick fix: Update changed files only
+npm run update-vectors
+
+# Nuclear option: Clear and rebuild everything
+npm run clear-vectors
+```
+
+### Server Performance Issues
+- **Slow startup**: Vector store rebuilds on server restart
+- **Manual updates**: Use update commands instead of restarting
+- **Cache issues**: Clear vectors if search behaves unexpectedly
+
+### Common Issues
+- **Missing results**: Try `npm run update-vectors` to refresh embeddings
+- **Outdated content**: Vector store updates incrementally based on file timestamps
+- **API errors**: Ensure `OPENAI_API_KEY` environment variable is set
 
 ## 🎯 Use Cases
 
