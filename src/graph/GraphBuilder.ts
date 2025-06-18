@@ -9,6 +9,7 @@ import { Graph } from 'graphlib';
 import { Note, Link, GraphNode, KnowledgeGraph } from '../models/types';
 import { MarkdownParser } from '../parser/MarkdownParser';
 import { LinkResolver } from '../parser/LinkResolver';
+import { ChunkingService } from '../parser/ChunkingService';
 
 export class GraphBuilder {
   private notesRoot: string;
@@ -40,6 +41,16 @@ export class GraphBuilder {
     for (const filePath of filePaths!) {
       try {
         const note = await this.parser.parseFile(filePath, this.notesRoot);
+        
+        // Generate semantic chunks for the note
+        const content = fs.readFileSync(filePath, 'utf-8');
+        note.chunks = ChunkingService.createChunks(
+          content,
+          note.title,
+          note.headings,
+          note.path
+        );
+        
         nodes.set(note.path, {
           note,
           incomingLinks: [],
@@ -241,6 +252,16 @@ export class GraphBuilder {
     for (const filePath of changedFiles) {
       try {
         const note = await this.parser.parseFile(filePath, this.notesRoot);
+        
+        // Generate semantic chunks for the note
+        const content = fs.readFileSync(filePath, 'utf-8');
+        note.chunks = ChunkingService.createChunks(
+          content,
+          note.title,
+          note.headings,
+          note.path
+        );
+        
         const newNode: GraphNode = {
           note,
           incomingLinks: [],

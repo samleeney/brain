@@ -8,6 +8,8 @@ import * as os from 'os';
 import * as crypto from 'crypto';
 import glob from 'fast-glob';
 import { KnowledgeGraph, CacheMetadata } from '../models/types';
+import { VectorStore } from '../embedding/VectorStore';
+import { EmbeddingService } from '../embedding/EmbeddingService';
 
 export class CacheManager {
   private notesRoot: string;
@@ -90,7 +92,7 @@ export class CacheManager {
     }
   }
 
-  async saveCache(graph: KnowledgeGraph): Promise<void> {
+  async saveCache(graph: KnowledgeGraph, overviewText?: string): Promise<void> {
     try {
       // Ensure cache directory exists
       await fs.promises.mkdir(this.cacheDir, { recursive: true });
@@ -101,7 +103,8 @@ export class CacheManager {
         created: new Date().toISOString(),
         notesRoot: this.notesRoot,
         notesCount: graph.nodes.size,
-        fileTimestamps: await this.getFileTimestamps()
+        fileTimestamps: await this.getFileTimestamps(),
+        overview: overviewText
       };
 
       // Prepare graph data for serialization
@@ -148,6 +151,32 @@ export class CacheManager {
       }
     } catch (error) {
       // Ignore errors when cleaning up
+    }
+  }
+
+  async getCachedOverview(): Promise<string | null> {
+    if (!fs.existsSync(this.metadataFile)) {
+      return null;
+    }
+
+    try {
+      const metadataContent = await fs.promises.readFile(this.metadataFile, 'utf-8');
+      const metadata: CacheMetadata = JSON.parse(metadataContent);
+
+      // Check cache version compatibility
+      if (metadata.version !== this.CACHE_VERSION) {
+        return null;
+      }
+
+      // Check if cache is still valid
+      const isValid = await this.isCacheValid(metadata);
+      if (!isValid) {
+        return null;
+      }
+
+      return metadata.overview || null;
+    } catch (error) {
+      return null;
     }
   }
 
@@ -210,6 +239,123 @@ export class CacheManager {
     }
 
     return true;
+  }
+
+  /**
+   * Build vector embeddings for all notes that need updating
+   */
+  async buildVectorEmbeddings(graph: KnowledgeGraph, apiKey: string): Promise<void> {
+    if (!apiKey) {
+      throw new Error('OpenAI API key is required for vector embeddings');
+    }
+
+    const vectorStore = new VectorStore(this.notesRoot);
+    const embeddingService = new EmbeddingService(apiKey);
+
+    console.error('Building vector embeddings...');
+    
+    let processed = 0;
+    const total = graph.nodes.size;
+
+    for (const [notePath, node] of graph.nodes.entries()) {
+      try {
+        // Check if note needs re-embedding
+        if (node.note.lastModified && vectorStore.needsReembedding(notePath, node.note.lastModified)) {
+          // Use existing chunks from the note
+          if (node.note.chunks && node.note.chunks.length > 0) {
+            await vectorStore.addNoteChunks(
+              notePath,
+              node.note.title,
+              node.note.chunks,
+              node.note.relativePath,
+              node.note.lastModified,
+              node.note.wordCount,
+              embeddingService
+            );
+          }
+          
+          processed++;
+          if (processed % 10 === 0) {
+            console.error(`Embedded ${processed}/${total} notes...`);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to embed ${node.note.relativePath}: ${error}`);
+      }
+    }
+
+    // Save vector store to disk
+    await vectorStore.saveToDisk();
+    
+    if (processed > 0) {
+      console.error(`✅ Embedded ${processed} notes`);
+    } else {
+      console.error('✅ All embeddings up to date');
+    }
+  }
+
+  /**
+   * Load configuration from MCP config file
+   */
+  async loadConfig(): Promise<{
+    vaultPath: string;
+    mode: string;
+    openaiApiKey?: string;
+    vectorSearch?: boolean;
+  } | null> {
+    // Load from MCP config file (single source of truth)
+    const mcpConfigPath = path.join(this.notesRoot, 'brain-mcp-config.json');
+    
+    if (!fs.existsSync(mcpConfigPath)) {
+      // Clean up any legacy config files
+      await this.cleanupLegacyConfigs();
+      return null;
+    }
+
+    try {
+      const configContent = await fs.promises.readFile(mcpConfigPath, 'utf-8');
+      const mcpConfig = JSON.parse(configContent);
+      
+      // Convert MCP config format to expected format
+      return {
+        vaultPath: mcpConfig.notesRoot || this.notesRoot,
+        mode: 'mcp',
+        openaiApiKey: mcpConfig.openaiApiKey,
+        vectorSearch: true
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Clean up legacy configuration files
+   */
+  private async cleanupLegacyConfigs(): Promise<void> {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    const configDir = path.join(homeDir, '.brain-config');
+    const vaultHash = crypto.createHash('md5').update(this.notesRoot).digest('hex').slice(0, 8);
+    const configPath = path.join(configDir, `${path.basename(this.notesRoot)}_${vaultHash}.json`);
+    const legacyConfigPath = path.join(this.notesRoot, '.brain-config.json');
+    
+    try {
+      // Remove legacy configs if they exist
+      if (fs.existsSync(configPath)) {
+        await fs.promises.unlink(configPath);
+      }
+      if (fs.existsSync(legacyConfigPath)) {
+        await fs.promises.unlink(legacyConfigPath);
+      }
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+  }
+
+  /**
+   * Get vector search instance
+   */
+  getVectorStore(): VectorStore {
+    return new VectorStore(this.notesRoot);
   }
 
   private async getFileTimestamps(): Promise<Record<string, number>> {

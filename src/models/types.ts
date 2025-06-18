@@ -4,8 +4,7 @@
 
 export enum LinkType {
   WIKI = 'wiki',          // [[note-name]]
-  MARKDOWN = 'markdown',  // [text](file.md)
-  TAG = 'tag'            // #tag-name
+  MARKDOWN = 'markdown'   // [text](file.md)
 }
 
 export interface Heading {
@@ -35,6 +34,23 @@ export interface Note {
   frontmatter: Record<string, any>; // YAML frontmatter if present
   lastModified: Date | null;       // File modification time
   wordCount: number;               // Approximate word count
+  chunks?: Chunk[];                // Semantic chunks of the note
+}
+
+export interface Chunk {
+  id: string;                      // Unique chunk identifier
+  content: string;                 // Chunk text content
+  startLine: number;               // Starting line in source file
+  endLine: number;                 // Ending line in source file
+  headingContext: string[];        // Hierarchical heading path
+  chunkType: ChunkType;            // Type of content chunk
+  embedding?: number[];            // Vector embedding if available
+}
+
+export enum ChunkType {
+  TITLE = 'title',                 // Title + first paragraph
+  HEADING_SECTION = 'heading',     // Content under a heading
+  PARAGRAPH = 'paragraph'          // Natural paragraph break
 }
 
 export interface GraphNode {
@@ -55,14 +71,6 @@ export interface KnowledgeGraph {
   lastUpdated: Date | null;       // Last graph build time
 }
 
-export interface SearchResult {
-  notePath: string;
-  score: number;
-  matchType: string;  // 'text', 'path', 'tag', 'heading'
-  context?: string;
-  lineNumber?: number;
-  graphNode?: GraphNode;
-}
 
 export interface CacheMetadata {
   version: string;
@@ -70,4 +78,5 @@ export interface CacheMetadata {
   notesRoot: string;
   notesCount: number;
   fileTimestamps: Record<string, number>;
+  overview?: string;
 }

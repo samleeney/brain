@@ -5,20 +5,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import matter from 'gray-matter';
-import MarkdownIt from 'markdown-it';
 import { Note, Link, Heading, LinkType } from '../models/types';
 
 export class MarkdownParser {
   private wikiLinkPattern = /\[\[([^\]]+)\]\]/g;
   private mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
   private tagPattern = /(?:^|(?<=\s))#([a-zA-Z0-9_-]+)/g;
-  private headingPattern = /^(#{1,6})\s+(.+)$/gm;
-  
-  private md: MarkdownIt;
-
-  constructor() {
-    this.md = new MarkdownIt();
-  }
 
   async parseFile(filePath: string, notesRoot: string): Promise<Note> {
     const content = await fs.promises.readFile(filePath, 'utf-8');
