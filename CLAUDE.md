@@ -95,7 +95,6 @@ Tests use Jest with ts-jest preset. Test files located in `tests/` directory:
 Simple development process:
 - `npm run build` - Build TypeScript
 - `npm test` - Run test suite
-- `npm run precommit` - Run all quality checks
 
 ### Claude Code Integration
 

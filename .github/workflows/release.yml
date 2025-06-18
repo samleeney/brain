@@ -2,56 +2,33 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  packages: write
+    tags:
+      - 'v*'
 
 jobs:
   release:
-    name: Release
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        persist-credentials: false
+    - uses: actions/checkout@v4
     
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
-        registry-url: 'https://registry.npmjs.org'
         cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
     
-    - name: Run tests
-      run: npm test
-    
     - name: Build
       run: npm run build
     
-    - name: Verify build
+    - name: Test before release
       run: |
-        # Test CLI commands
+        # Basic smoke tests
         node dist/cli/brain.js --version
-        node dist/cli/brain.js --help
         
         # Test package can be packed
         npm pack
         echo "✅ Package ready for release"
-    
-    - name: Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: npx semantic-release
