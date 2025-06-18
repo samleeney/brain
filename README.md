@@ -7,15 +7,25 @@ Brain transforms your markdown notes into an intelligent, searchable knowledge b
 ## 🧠 Overview
 
 ```mermaid
-flowchart LR
-    A[📄 Your Notes] --> B[🔧 Brain MCP]
-    B --> C[🤖 Claude Desktop]
-    B --> D[🔗 Other MCP Clients]
+flowchart TD
+    A[📄 Your Notes] --> B[🔧 Chunk Notes<br/>Headings, Paragraphs, Code]
+    B --> C[🧮 Generate Embeddings<br/>OpenAI text-embedding-3-large]
+    C --> D[💾 Vector Store<br/>Similarity Search Index]
+    
+    E[❓ Your Query<br/>"What did I learn about React?"] --> F[🔍 Calculate Similarity<br/>Query vs All Chunks]
+    D --> F
+    
+    F --> G{📊 Similar Enough?<br/>Score > Threshold}
+    G -->|No| H[⏭️ Ignore Chunk]
+    G -->|Yes| I[✅ Add to Results]
+    
+    H --> J[Continue to Next Chunk]
+    I --> J
+    J --> K[📝 Return Relevant Chunks<br/>to Claude/MCP Client]
     
     style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#e8f5e8
+    style E fill:#f3e5f5
+    style K fill:#e8f5e8
 ```
 
 Brain reads your markdown files, creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude naturally: "What did I learn about React?" and it automatically searches your notes.
