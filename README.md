@@ -55,7 +55,7 @@ npm install -g brain-mcp
 
 ### 2. Configure Your Knowledge Base
 ```bash
-brain-setup
+brain setup
 ```
 
 This interactive setup will:
@@ -203,19 +203,24 @@ your-notes/
 - **Lists & Tables**: Semantically grouped
 
 ### Manual Vector Store Updates
-Keep your search index up to date with manual update commands:
+Keep your search index up to date with the Brain CLI:
 
 ```bash
 # Update only changed files (recommended for daily use)
-npm run update-vectors
+brain update
 
 # Clear and rebuild all vectors (for troubleshooting)
-npm run clear-vectors
+brain clear
+
+# Check configuration and status
+brain status
 ```
 
-**When to use manual updates:**
-- 📝 **After editing notes**: Update vectors for changed files only
-- 🔄 **Troubleshooting search**: Clear and rebuild everything
+**Brain CLI Commands:**
+- 📝 **`brain update`**: Update vectors for changed files only
+- 🔄 **`brain clear`**: Clear and rebuild everything
+- 📊 **`brain status`**: Show configuration and statistics
+- ⚙️ **`brain setup`**: Interactive configuration setup
 - ⚡ **Performance**: Faster than restarting the MCP server
 
 ### Environment Variables
@@ -289,10 +294,10 @@ If your search results don't reflect recent file changes:
 
 ```bash
 # Quick fix: Update changed files only
-npm run update-vectors
+brain update
 
 # Nuclear option: Clear and rebuild everything
-npm run clear-vectors
+brain clear
 ```
 
 ### Server Performance Issues
@@ -301,9 +306,10 @@ npm run clear-vectors
 - **Cache issues**: Clear vectors if search behaves unexpectedly
 
 ### Common Issues
-- **Missing results**: Try `npm run update-vectors` to refresh embeddings
+- **Missing results**: Try `brain update` to refresh embeddings
 - **Outdated content**: Vector store updates incrementally based on file timestamps
 - **API errors**: Ensure `OPENAI_API_KEY` environment variable is set
+- **Configuration issues**: Use `brain status` to check setup
 
 ## 🎯 Use Cases
 

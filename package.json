@@ -4,7 +4,7 @@
   "description": "Brain MCP Server - Semantic knowledge base access for Claude Desktop via Model Context Protocol. Provides intelligent search and navigation of markdown notes through native MCP tools.",
   "main": "dist/mcp/server.js",
   "bin": {
-    "brain-setup": "./dist/setup.js"
+    "brain": "./dist/cli/brain.js"
   },
   "directories": {
     "docs": "docs"
@@ -46,6 +46,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.3",
     "@types/inquirer": "^9.0.8",
+    "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.2",
     "graphlib": "^2.1.8",
