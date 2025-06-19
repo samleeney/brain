@@ -1,0 +1,14 @@
+# Only include essential files for npm package
+tests/
+test-notes/
+.github/
+*.md
+!README.md
+tsconfig.json
+jest.config.js
+src/
+!dist/
+node_modules/
+.git/
+.gitignore
+CLAUDE.md
