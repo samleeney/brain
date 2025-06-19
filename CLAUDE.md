@@ -98,28 +98,29 @@ Simple development process:
 
 ### Release Process
 
-Automated publishing via GitHub Actions:
+Fully automated publishing via GitHub Actions:
 
-1. **Create Release**: Use the release script
-   ```bash
-   ./scripts/release.sh [patch|minor|major]
-   ```
+**Development Workflow**:
+1. Create feature/fix branches for development
+2. Push changes to development branches
+3. Create pull request to merge into `main`
+4. When merged to `main`, GitHub Actions automatically:
+   - Runs tests
+   - Builds the project
+   - Bumps version based on commit message
+   - Publishes to npm registry
+   - Creates GitHub release with tarball asset
 
-2. **Automated Pipeline**: When you push a version tag (v1.0.0, etc.), GitHub Actions will:
-   - Run tests
-   - Build the project
-   - Publish to npm registry
-   - Create GitHub release with tarball asset
-
-3. **Manual Release**: Alternatively, create tags manually:
-   ```bash
-   npm version patch  # or minor/major
-   git push origin main --tags
-   ```
+**Version Bumping**:
+- Commit messages starting with `feat:` or `feature:` → minor version bump
+- Commit messages starting with `fix:` or `bugfix:` → patch version bump
+- Commit messages starting with `BREAKING:` or `breaking:` → major version bump
+- All other commits → patch version bump
 
 **Setup Requirements**:
 - `NPM_TOKEN` secret in GitHub repository settings
 - GitHub Actions enabled
+- All development done on feature branches, not directly on `main`
 
 ### Claude Code Integration
 
