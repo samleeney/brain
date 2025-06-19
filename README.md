@@ -42,8 +42,10 @@ This will ask for your notes directory and OpenAI API key.
 After running `brain setup`, add Brain to Claude Code:
 
 ```bash
-claude mcp add brain brain server
+claude mcp add brain node "$(npm root -g)/brain-mcp/dist/mcp/server.js" --s user
 ```
+
+This installs Brain globally for all your Claude Code projects. Learn more about [Claude MCP configuration](https://docs.anthropic.com/en/docs/claude-code/mcp-servers).
 
 ### 4. Add to Other Agentic Frameworks
 Brain is a standard MCP server. For other MCP-compatible systems, use:

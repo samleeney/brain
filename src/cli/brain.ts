@@ -204,5 +204,20 @@ program
     await updateVectors(true);
   });
 
+program
+  .command('server')
+  .description('Start the Brain MCP server')
+  .action(async () => {
+    console.log('🧠 Starting Brain MCP server...');
+    // Import and run the MCP server
+    const { spawn } = await import('child_process');
+    const serverPath = path.join(__dirname, '../mcp/server.js');
+    const child = spawn('node', [serverPath], { stdio: 'inherit' });
+    
+    child.on('close', (code) => {
+      process.exit(code || 0);
+    });
+  });
+
 // Parse command line arguments
 program.parse();
