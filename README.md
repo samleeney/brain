@@ -128,6 +128,7 @@ You also included a Python example showing linear regression for predicting hous
 - [ ] Accept other sources (email, todo lists, etc.)
 - [ ] Include other file types (images, PDFs)
 - [ ] Add open source embedding models
+- [ ] Add to brain?
 
 ## 📋 Requirements
 
