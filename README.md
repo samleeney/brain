@@ -29,7 +29,7 @@ Brain reads your markdown files (including Obsidian vaults), creates semantic em
 
 ### 1. Install Brain
 ```bash
-npm install -g git+https://github.com/samleeney/brain.git
+sudo npm install -g brain-mcp
 ```
 
 ### 2. Setup Configuration
