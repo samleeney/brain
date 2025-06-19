@@ -1,8 +1,8 @@
 # Brain MCP Server
 
-**Semantic knowledge base access for your markdown notes via Model Context Protocol**
+**Semantic knowledge base access for markdown notes via Model Context Protocol**
 
-Brain transforms your markdown notes (such as Obsidian vaults) into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
+Brain transforms markdown large directories of notes (such as Obsidian vaults) into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
 
 ## 🧠 How Brain Works
 
@@ -23,7 +23,7 @@ flowchart TD
     style G fill:#e8f5e8
 ```
 
-Brain reads your markdown files (including Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes.
+Brain reads your markdown files (including Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes and returns adds **relevant** notes to the context window.
 
 ## 🚀 Install
 
@@ -81,6 +81,43 @@ Once installed, Brain provides these MCP tools:
 - **brain_list** - Browse notes by directory
 
 Simply ask Claude Code questions about your notes and it will automatically use these tools.
+
+## 5. Example Interaction
+
+Here's what a typical interaction with Claude Code looks like once Brain is installed:
+
+```
+You: Can you look in my notes and tell me what I learned about supervised learning?
+
+Claude: I'll search your notes for information about supervised learning.
+
+<function_calls>
+<invoke name="mcp__brain__brain_search">
+<parameter name="query">supervised learning</parameter>
+</invoke>
+</function_calls>
+
+<function_results>
+Found 3 relevant chunks:
+- machine-learning-fundamentals.md (similarity: 0.89)
+- practical-applications.md (similarity: 0.72)
+- neural-networks.md (similarity: 0.68)
+</function_results>
+
+Let me read the most relevant note:
+
+<function_calls>
+<invoke name="mcp__brain__brain_read">
+<parameter name="notePath">machine-learning-fundamentals.md</parameter>
+</invoke>
+</function_calls>
+
+Based on your notes, you learned that supervised learning uses labeled data to train models. In your machine-learning-fundamentals.md note, you mentioned studying an email spam classifier as an example. You noted that supervised learning differs from unsupervised learning, which finds hidden patterns in unlabeled data.
+
+You also included a Python example showing linear regression for predicting house prices using scikit-learn.
+```
+
+**Note**: While Brain automatically searches when relevant, at this stage we recommend occasionally hinting to Claude that it should "look in your notes" or "search my knowledge base" for optimal results, as full automatic detection is still being optimized.
 
 ## 🚧 Roadmap
 
