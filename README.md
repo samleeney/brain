@@ -23,7 +23,7 @@ flowchart TD
     style G fill:#e8f5e8
 ```
 
-Brain reads your markdown files (including Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes and returns adds **relevant** notes to the context window.
+Brain reads your markdown files (such as Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes and returns adds **relevant** notes to the context window.
 
 ## 🚀 Install
 
