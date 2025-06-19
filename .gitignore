@@ -3,7 +3,7 @@ node_modules/
 yarn.lock
 
 # Build output
-dist/
+# dist/ - Include compiled JS for npm global install
 *.tsbuildinfo
 
 # Environment variables
