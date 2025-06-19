@@ -17,6 +17,7 @@
     "ci": "npm run build && npm test && node dist/cli/brain.js --version",
     "setup": "node dist/setup.js",
     "server": "node dist/mcp/server.js",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "repository": {
