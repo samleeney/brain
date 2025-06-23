@@ -6,14 +6,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import matter from 'gray-matter';
 import { Note, Link, Heading, LinkType } from '../models/types';
+import { BaseParser } from './BaseParser';
 
-export class MarkdownParser {
+export class MarkdownParser implements BaseParser {
   private wikiLinkPattern = /\[\[([^\]]+)\]\]/g;
   private mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
   private tagPattern = /(?:^|(?<=\s))#([a-zA-Z0-9_-]+)/g;
 
-  async parseFile(filePath: string, notesRoot: string): Promise<Note> {
-    const content = await fs.promises.readFile(filePath, 'utf-8');
+  async parse(filePath: string, content: string, notesRoot: string): Promise<Note> {
     
     // Parse frontmatter
     const { data: frontmatter, content: mainContent } = matter(content);
@@ -170,5 +170,19 @@ export class MarkdownParser {
     // Replace spaces with hyphens
     slug = slug.replace(/[-\s]+/g, '-');
     return slug.replace(/^-+|-+$/g, ''); // Trim hyphens
+  }
+  
+  supports(extension: string): boolean {
+    return this.getSupportedExtensions().includes(extension.toLowerCase());
+  }
+  
+  getSupportedExtensions(): string[] {
+    return ['.md', '.markdown', '.mdx'];
+  }
+  
+  // Legacy method for backward compatibility
+  async parseFile(filePath: string, notesRoot: string): Promise<Note> {
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+    return this.parse(filePath, content, notesRoot);
   }
 }

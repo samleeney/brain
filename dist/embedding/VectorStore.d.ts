@@ -45,6 +45,10 @@ export declare class VectorStore {
      */
     getIndexedNotes(): string[];
     /**
+     * Get all note paths that have embeddings (alias for getIndexedNotes)
+     */
+    getAllNotePaths(): string[];
+    /**
      * Check if a note needs re-embedding (file modified since last embedding)
      */
     needsReembedding(notePath: string, lastModified: Date): boolean;

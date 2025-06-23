@@ -1,0 +1,1 @@
+{"version":3,"file":"ParserFactory.d.ts","sourceRoot":"","sources":["../../src/parser/ParserFactory.ts"],"names":[],"mappings":"AAAA;;GAEG;AAGH,OAAO,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAM1C,qBAAa,aAAa;IACxB,OAAO,CAAC,OAAO,CAAoB;;IAUnC;;;;OAIG;IACH,SAAS,CAAC,QAAQ,EAAE,MAAM,GAAG,UAAU,GAAG,IAAI;IAY9C;;;OAGG;IACH,sBAAsB,IAAI,MAAM,EAAE;IAUlC;;;OAGG;IACH,oBAAoB,IAAI,MAAM,EAAE;CAGjC"}

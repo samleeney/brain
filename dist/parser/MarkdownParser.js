@@ -48,8 +48,7 @@ class MarkdownParser {
     wikiLinkPattern = /\[\[([^\]]+)\]\]/g;
     mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
     tagPattern = /(?:^|(?<=\s))#([a-zA-Z0-9_-]+)/g;
-    async parseFile(filePath, notesRoot) {
-        const content = await fs.promises.readFile(filePath, 'utf-8');
+    async parse(filePath, content, notesRoot) {
         // Parse frontmatter
         const { data: frontmatter, content: mainContent } = (0, gray_matter_1.default)(content);
         // Extract headings
@@ -175,6 +174,17 @@ class MarkdownParser {
         // Replace spaces with hyphens
         slug = slug.replace(/[-\s]+/g, '-');
         return slug.replace(/^-+|-+$/g, ''); // Trim hyphens
+    }
+    supports(extension) {
+        return this.getSupportedExtensions().includes(extension.toLowerCase());
+    }
+    getSupportedExtensions() {
+        return ['.md', '.markdown', '.mdx'];
+    }
+    // Legacy method for backward compatibility
+    async parseFile(filePath, notesRoot) {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        return this.parse(filePath, content, notesRoot);
     }
 }
 exports.MarkdownParser = MarkdownParser;

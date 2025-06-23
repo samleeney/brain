@@ -4,8 +4,9 @@
 import { KnowledgeGraph } from '../models/types';
 export declare class GraphBuilder {
     private notesRoot;
-    private parser;
+    private parserFactory;
     private linkResolver;
+    private supportedPatterns;
     constructor(notesRoot: string);
     buildGraph(filePaths?: string[]): Promise<KnowledgeGraph>;
     private buildGraphLibGraph;

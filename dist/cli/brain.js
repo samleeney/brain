@@ -37,6 +37,9 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
 const path = __importStar(require("path"));
@@ -45,6 +48,8 @@ const GraphBuilder_1 = require("../graph/GraphBuilder");
 const CacheManager_1 = require("../cache/CacheManager");
 const VectorStore_1 = require("../embedding/VectorStore");
 const EmbeddingService_1 = require("../embedding/EmbeddingService");
+const ParserFactory_1 = require("../parser/ParserFactory");
+const fast_glob_1 = __importDefault(require("fast-glob"));
 const program = new commander_1.Command();
 async function loadConfig() {
     const configPath = path.join(process.env.HOME || '~', '.brain', 'config.json');
@@ -160,6 +165,159 @@ async function showStatus() {
         process.exit(1);
     }
 }
+async function addFiles(targetPath, options) {
+    try {
+        const config = await loadConfig();
+        if (!config.openaiApiKey) {
+            console.error('❌ OpenAI API key not found. Set OPENAI_API_KEY environment variable or run brain setup.');
+            process.exit(1);
+        }
+        // Resolve absolute path
+        const absolutePath = path.resolve(targetPath);
+        if (!fs.existsSync(absolutePath)) {
+            console.error(`❌ Path not found: ${absolutePath}`);
+            process.exit(1);
+        }
+        console.log('🧠 Brain Add Files');
+        console.log(`📂 Target: ${absolutePath}`);
+        console.log('');
+        // Initialize parser factory
+        const parserFactory = new ParserFactory_1.ParserFactory();
+        let supportedExtensions = parserFactory.getSupportedExtensions();
+        // Filter by types if specified
+        if (options.types && options.types.length > 0) {
+            const requestedTypes = options.types.map(t => t.startsWith('.') ? t : '.' + t);
+            supportedExtensions = supportedExtensions.filter(ext => requestedTypes.includes(ext));
+            console.log(`🔍 File types: ${supportedExtensions.join(', ')}`);
+        }
+        // Create glob patterns
+        const patterns = supportedExtensions.map(ext => `**/*${ext}`);
+        // Find files
+        let files;
+        if (fs.statSync(absolutePath).isDirectory()) {
+            files = await (0, fast_glob_1.default)(patterns, {
+                cwd: absolutePath,
+                absolute: true,
+                ignore: ['**/node_modules/**', '**/.*/**']
+            });
+        }
+        else {
+            // Single file
+            const ext = path.extname(absolutePath).toLowerCase();
+            if (!supportedExtensions.includes(ext)) {
+                console.error(`❌ Unsupported file type: ${ext}`);
+                console.log(`Supported types: ${supportedExtensions.join(', ')}`);
+                process.exit(1);
+            }
+            files = [absolutePath];
+        }
+        if (files.length === 0) {
+            console.log('❌ No supported files found.');
+            return;
+        }
+        console.log(`📁 Found ${files.length} file(s) to add:`);
+        files.slice(0, 10).forEach(file => {
+            console.log(`  📄 ${path.relative(process.cwd(), file)}`);
+        });
+        if (files.length > 10) {
+            console.log(`  ... and ${files.length - 10} more`);
+        }
+        console.log('');
+        // Initialize services
+        const cacheManager = new CacheManager_1.CacheManager(config.vaultPath);
+        const vectorStore = new VectorStore_1.VectorStore(config.vaultPath);
+        const embeddingService = new EmbeddingService_1.EmbeddingService(config.openaiApiKey);
+        const graphBuilder = new GraphBuilder_1.GraphBuilder(config.vaultPath);
+        // Build graph with specified files
+        console.log('📊 Processing files...');
+        const graph = await graphBuilder.buildGraph(files);
+        console.log(`✅ Processed ${graph.nodes.size} files`);
+        // Update vector embeddings
+        console.log('🔄 Adding to vector store...');
+        let added = 0;
+        for (const [notePath, node] of graph.nodes.entries()) {
+            try {
+                if (node.note.chunks && node.note.chunks.length > 0) {
+                    await vectorStore.addNoteChunks(notePath, node.note.title, node.note.chunks, node.note.relativePath, node.note.lastModified || new Date(), node.note.wordCount, embeddingService);
+                    added++;
+                    if (added % 5 === 0) {
+                        console.log(`  📝 Added ${added} files...`);
+                    }
+                }
+            }
+            catch (error) {
+                console.error(`❌ Failed to add ${node.note.relativePath}: ${error.message}`);
+            }
+        }
+        // Save vector store
+        await vectorStore.saveToDisk();
+        console.log('');
+        console.log('✅ Files added successfully!');
+        console.log(`📈 Added: ${added} files`);
+        const stats = vectorStore.getStats();
+        console.log(`📊 Total: ${stats.totalNotes} notes, ${stats.totalChunks} chunks`);
+    }
+    catch (error) {
+        console.error('❌ Add failed:', error.message);
+        process.exit(1);
+    }
+}
+async function removeFiles(targetPath) {
+    try {
+        const config = await loadConfig();
+        // Resolve absolute path
+        const absolutePath = path.resolve(targetPath);
+        console.log('🧠 Brain Remove Files');
+        console.log(`📂 Target: ${absolutePath}`);
+        console.log('');
+        // Initialize services
+        const vectorStore = new VectorStore_1.VectorStore(config.vaultPath);
+        // Find files to remove from vector store
+        const stats = vectorStore.getStats();
+        const filesToRemove = [];
+        // Get all indexed files that match the target path
+        for (const notePath of vectorStore.getAllNotePaths()) {
+            if (notePath.startsWith(absolutePath)) {
+                filesToRemove.push(notePath);
+            }
+        }
+        if (filesToRemove.length === 0) {
+            console.log('❌ No matching files found in vector store.');
+            return;
+        }
+        console.log(`📁 Found ${filesToRemove.length} file(s) to remove:`);
+        filesToRemove.slice(0, 10).forEach(file => {
+            console.log(`  📄 ${path.relative(process.cwd(), file)}`);
+        });
+        if (filesToRemove.length > 10) {
+            console.log(`  ... and ${filesToRemove.length - 10} more`);
+        }
+        console.log('');
+        // Remove from vector store
+        console.log('🗑️  Removing from vector store...');
+        let removed = 0;
+        for (const filePath of filesToRemove) {
+            try {
+                vectorStore.removeNote(filePath);
+                removed++;
+            }
+            catch (error) {
+                console.error(`❌ Failed to remove ${filePath}: ${error.message}`);
+            }
+        }
+        // Save vector store
+        await vectorStore.saveToDisk();
+        console.log('');
+        console.log('✅ Files removed successfully!');
+        console.log(`🗑️  Removed: ${removed} files`);
+        const newStats = vectorStore.getStats();
+        console.log(`📊 Remaining: ${newStats.totalNotes} notes, ${newStats.totalChunks} chunks`);
+    }
+    catch (error) {
+        console.error('❌ Remove failed:', error.message);
+        process.exit(1);
+    }
+}
 // Set up CLI commands
 program
     .name('brain')
@@ -209,6 +367,21 @@ program
     child.on('close', (code) => {
         process.exit(code || 0);
     });
+});
+program
+    .command('add')
+    .description('Add files to the Brain knowledge base')
+    .argument('<path>', 'Path to file or directory to add')
+    .option('-t, --types <types>', 'Comma-separated list of file types to include (e.g., pdf,txt,org)', (value) => value.split(','))
+    .action(async (targetPath, options) => {
+    await addFiles(targetPath, options);
+});
+program
+    .command('remove')
+    .description('Remove files from the Brain knowledge base')
+    .argument('<path>', 'Path to file or directory to remove')
+    .action(async (targetPath) => {
+    await removeFiles(targetPath);
 });
 // Parse command line arguments
 program.parse();

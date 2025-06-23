@@ -139,6 +139,12 @@ class VectorStore {
         return Array.from(this.documents.keys());
     }
     /**
+     * Get all note paths that have embeddings (alias for getIndexedNotes)
+     */
+    getAllNotePaths() {
+        return this.getIndexedNotes();
+    }
+    /**
      * Check if a note needs re-embedding (file modified since last embedding)
      */
     needsReembedding(notePath, lastModified) {

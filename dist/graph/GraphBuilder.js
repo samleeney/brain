@@ -43,23 +43,25 @@ exports.GraphBuilder = void 0;
 const fs = __importStar(require("fs"));
 const fast_glob_1 = __importDefault(require("fast-glob"));
 const graphlib_1 = require("graphlib");
-const MarkdownParser_1 = require("../parser/MarkdownParser");
+const ParserFactory_1 = require("../parser/ParserFactory");
 const LinkResolver_1 = require("../parser/LinkResolver");
 const ChunkingService_1 = require("../parser/ChunkingService");
 class GraphBuilder {
     notesRoot;
-    parser;
+    parserFactory;
     linkResolver;
+    supportedPatterns;
     constructor(notesRoot) {
         this.notesRoot = notesRoot;
-        this.parser = new MarkdownParser_1.MarkdownParser();
+        this.parserFactory = new ParserFactory_1.ParserFactory();
         this.linkResolver = new LinkResolver_1.LinkResolver(notesRoot);
+        this.supportedPatterns = this.parserFactory.getSupportedPatterns();
     }
     async buildGraph(filePaths) {
         // Initialize link resolver
         await this.linkResolver.initialize();
         if (!filePaths) {
-            filePaths = await (0, fast_glob_1.default)('**/*.md', {
+            filePaths = await (0, fast_glob_1.default)(this.supportedPatterns, {
                 cwd: this.notesRoot,
                 absolute: true,
                 ignore: ['**/node_modules/**', '**/.*/**']
@@ -70,9 +72,14 @@ class GraphBuilder {
         const allLinks = [];
         for (const filePath of filePaths) {
             try {
-                const note = await this.parser.parseFile(filePath, this.notesRoot);
-                // Generate semantic chunks for the note
+                const parser = this.parserFactory.getParser(filePath);
+                if (!parser) {
+                    console.warn(`Warning: No parser available for ${filePath}`);
+                    continue;
+                }
                 const content = fs.readFileSync(filePath, 'utf-8');
+                const note = await parser.parse(filePath, content, this.notesRoot);
+                // Generate semantic chunks for the note
                 note.chunks = ChunkingService_1.ChunkingService.createChunks(content, note.title, note.headings, note.path);
                 nodes.set(note.path, {
                     note,
@@ -238,9 +245,14 @@ class GraphBuilder {
         const newLinks = [];
         for (const filePath of changedFiles) {
             try {
-                const note = await this.parser.parseFile(filePath, this.notesRoot);
-                // Generate semantic chunks for the note
+                const parser = this.parserFactory.getParser(filePath);
+                if (!parser) {
+                    console.warn(`Warning: No parser available for ${filePath}`);
+                    continue;
+                }
                 const content = fs.readFileSync(filePath, 'utf-8');
+                const note = await parser.parse(filePath, content, this.notesRoot);
+                // Generate semantic chunks for the note
                 note.chunks = ChunkingService_1.ChunkingService.createChunks(content, note.title, note.headings, note.path);
                 const newNode = {
                     note,
