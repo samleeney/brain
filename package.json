@@ -1,10 +1,11 @@
 {
   "name": "brain-mcp",
-  "version": "1.0.4",
-  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of markdown notes (such as Obsidian vaults) through native MCP tools.",
-  "main": "dist/mcp/server.js",
+  "version": "2.0.0",
+  "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of files from multiple locations through native MCP tools.",
+  "main": "dist/mcp/serverV2.js",
   "bin": {
-    "brain": "./dist/cli/brain.js"
+    "brain": "./dist/cli/brainV2.js",
+    "brain-migrate": "./dist/migration/migrateToV2.js"
   },
   "directories": {
     "docs": "docs"
@@ -14,9 +15,10 @@
     "clean": "rm -rf dist/ .brain-cache.json .brain-vectors.json",
     "test": "jest",
     "test:watch": "jest --watch",
-    "ci": "npm run build && npm test && node dist/cli/brain.js --version",
+    "ci": "npm run build && npm test && node dist/cli/brainV2.js --version",
     "setup": "node dist/setup.js",
-    "server": "node dist/mcp/server.js",
+    "server": "node dist/mcp/serverV2.js",
+    "server:v1": "node dist/mcp/server.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -49,6 +51,8 @@
     "@modelcontextprotocol/sdk": "^1.12.3",
     "@types/inquirer": "^9.0.8",
     "@types/pdf-parse": "^1.1.5",
+    "@types/sqlite3": "^3.1.11",
+    "@types/uuid": "^10.0.0",
     "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.2",
@@ -59,7 +63,9 @@
     "markdown-it": "^14.1.0",
     "openai": "^5.3.0",
     "pdf-parse": "^1.1.1",
+    "sqlite3": "^5.1.7",
     "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {
