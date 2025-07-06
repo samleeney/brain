@@ -1,6 +1,6 @@
 {
   "name": "brain-mcp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of files from multiple locations through native MCP tools.",
   "main": "dist/mcp/serverV2.js",
   "bin": {
