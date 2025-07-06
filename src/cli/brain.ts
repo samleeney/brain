@@ -358,7 +358,7 @@ async function removeFiles(targetPath: string): Promise<void> {
 program
   .name('brain')
   .description('Brain MCP - Semantic knowledge base for your markdown notes')
-  .version('1.0.0');
+  .version('1.0.4');
 
 program
   .command('setup')
