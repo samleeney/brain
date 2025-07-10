@@ -87,13 +87,13 @@ Simply ask Claude Code questions about your notes and it will automatically use 
 Here's what a typical interaction with Claude Code looks like once Brain is installed:
 
 ```
-You: Using my notes from the REACH team meeting and the bayesian analysis PDF, can you explain how we're handling the foreground wedge contamination in our 21-cm signal extraction?
+You: Using my notes from the REACH team meeting and the bayesian analysis PDF, can you explain how we're handling the foreground contamination in our 21-cm signal extraction?
 
-Claude: I'll search your notes for information about REACH's foreground wedge and Bayesian analysis approach.
+Claude: I'll search your notes for information about REACH's foreground and Bayesian analysis approach.
 
 <function_calls>
 <invoke name="mcp__brain__brain_search">
-<parameter name="query">REACH foreground wedge bayesian 21-cm signal</parameter>
+<parameter name="query">REACH foreground bayesian 21-cm signal</parameter>
 </invoke>
 </function_calls>
 
@@ -113,7 +113,7 @@ Let me read the most relevant meeting notes:
 </invoke>
 </function_calls>
 
-Based on your REACH collaboration notes and the Bayesian pipeline PDF, you're using a Bayesian framework to separate the 21-cm signal from foregrounds. The meeting notes highlight that the hexagonal array's chromatic response is key - by having well-characterised frequency-dependent beam patterns, you can distinguish between spectrally smooth foregrounds (confined to the wedge) and the structured 21-cm signal.
+Based on your REACH collaboration notes and the Bayesian pipeline PDF, you're using a Bayesian framework to separate the 21-cm signal from foregrounds. The meeting notes highlight that the hexagonal array's chromatic response is key - by having well-characterised frequency-dependent beam patterns, you can distinguish between spectrally smooth foregrounds to the and the structured 21-cm signal.
 
 The PDF details how the pipeline uses physically motivated foreground models with 5-7 log-polynomial terms, while simultaneously fitting for the 21-cm signal using turning points at z~17 (absorption trough) and z~6 (emission peak). Your notes mention achieving 100-200 mK sensitivity in the 50-200 MHz band after 1000 hours of integration.
 ```
