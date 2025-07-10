@@ -251,13 +251,16 @@ export class SearchEngineV2 {
    */
   private expandAcronyms(query: string): string {
     const acronyms: { [key: string]: string } = {
-      'api': 'application programming interface',
-      'ui': 'user interface',
-      'db': 'database',
-      'ml': 'machine learning',
-      'ai': 'artificial intelligence',
-      'ci': 'continuous integration',
-      'cd': 'continuous deployment',
+      'reach': 'radio experiment analysing cosmic hydrogen',
+      'eor': 'epoch of reionisation',
+      'rfi': 'radio frequency interference',
+      'edges': 'experiment detect global eor signature',
+      'saras': 'shaped antenna radio spectrum',
+      'hera': 'hydrogen epoch reionization array',
+      'leda': 'large aperture experiment detect dark ages',
+      'mwa': 'murchison widefield array',
+      'cmb': 'cosmic microwave background',
+      'fwhm': 'full width half maximum',
       // Add more as needed
     };
     

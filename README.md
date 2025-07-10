@@ -2,13 +2,13 @@
 
 **Semantic knowledge base access for markdown notes via Model Context Protocol**
 
-Brain transforms markdown large directories of notes (such as Obsidian vaults) into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
+Brain adds large directories of notes (such as Obsidian vaults), emails, or individual files (such as PDF's) into an intelligent, searchable knowledge base that integrates with Claude Code and other agentic frameworks via MCP.
 
 ## 🧠 How Brain Works
 
 ```mermaid
 flowchart TD
-    A[📄 Your Notes] --> B[🔧 Chunk & Embed]
+    A[📄 Your Second Brain] --> B[🔧 Chunk & Embed]
     B --> C[💾 Vector Store]
     
     D[❓ Your Query] --> E[🔍 Find Similar Chunks]
@@ -23,7 +23,7 @@ flowchart TD
     style G fill:#e8f5e8
 ```
 
-Brain reads your markdown files (such as Obsidian vaults), creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "What did I learn about React?" and it automatically searches your notes and returns adds **relevant** notes to the context window.
+Brain reads your markdown files (such as Obsidian vaults), PDF's, etc and creates semantic embeddings, and provides intelligent search through MCP tools. Ask Claude Code naturally: "Using my meeting notes from the REACH collaboration and the hexagonal antenna array PDFs, help me understand the chromatic distortion mitigation strategy for the 50-200 MHz band" and it automatically searches your notes and returns adds only **relevant** notes to the context window. Brain automatically determines which notes are relevant and if no notes are relevant nothing is added to the context.
 
 ## 🚀 Install
 
@@ -87,34 +87,35 @@ Simply ask Claude Code questions about your notes and it will automatically use 
 Here's what a typical interaction with Claude Code looks like once Brain is installed:
 
 ```
-You: Can you look in my notes and tell me what I learned about supervised learning?
+You: Using my notes from the REACH team meeting and the bayesian analysis PDF, can you explain how we're handling the foreground wedge contamination in our 21-cm signal extraction?
 
-Claude: I'll search your notes for information about supervised learning.
+Claude: I'll search your notes for information about REACH's foreground wedge and Bayesian analysis approach.
 
 <function_calls>
 <invoke name="mcp__brain__brain_search">
-<parameter name="query">supervised learning</parameter>
+<parameter name="query">REACH foreground wedge bayesian 21-cm signal</parameter>
 </invoke>
 </function_calls>
 
 <function_results>
-Found 3 relevant chunks:
-- machine-learning-fundamentals.md (similarity: 0.89)
-- practical-applications.md (similarity: 0.72)
-- neural-networks.md (similarity: 0.68)
+Found 4 relevant chunks:
+- meetings/2024-reach-collaboration.md (similarity: 0.93)
+- pdfs/reach-bayesian-pipeline.pdf (similarity: 0.89)
+- reach-antenna-design.md (similarity: 0.76)
+- cosmic-dawn-theory.md (similarity: 0.72)
 </function_results>
 
-Let me read the most relevant note:
+Let me read the most relevant meeting notes:
 
 <function_calls>
 <invoke name="mcp__brain__brain_read">
-<parameter name="notePath">machine-learning-fundamentals.md</parameter>
+<parameter name="notePath">meetings/2024-reach-collaboration.md</parameter>
 </invoke>
 </function_calls>
 
-Based on your notes, you learned that supervised learning uses labeled data to train models. In your machine-learning-fundamentals.md note, you mentioned studying an email spam classifier as an example. You noted that supervised learning differs from unsupervised learning, which finds hidden patterns in unlabeled data.
+Based on your REACH collaboration notes and the Bayesian pipeline PDF, you're using a Bayesian framework to separate the 21-cm signal from foregrounds. The meeting notes highlight that the hexagonal array's chromatic response is key - by having well-characterised frequency-dependent beam patterns, you can distinguish between spectrally smooth foregrounds (confined to the wedge) and the structured 21-cm signal.
 
-You also included a Python example showing linear regression for predicting house prices using scikit-learn.
+The PDF details how the pipeline uses physically motivated foreground models with 5-7 log-polynomial terms, while simultaneously fitting for the 21-cm signal using turning points at z~17 (absorption trough) and z~6 (emission peak). Your notes mention achieving 100-200 mK sensitivity in the 50-200 MHz band after 1000 hours of integration.
 ```
 
 **Note**: While Brain automatically searches when relevant, at this stage we recommend occasionally hinting to Claude that it should "look in your notes" or "search my knowledge base" for optimal results, as full automatic detection is still being optimized.
