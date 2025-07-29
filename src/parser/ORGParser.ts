@@ -8,21 +8,24 @@ import { BaseParser } from './BaseParser';
 import { Note, Heading, Link, LinkType } from '../models/types';
 
 export class ORGParser implements BaseParser {
-  async parse(filePath: string, content: string, notesRoot: string): Promise<Note> {
+  async parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note> {
+    // Convert Buffer to string if needed
+    const textContent = typeof content === 'string' ? content : content.toString('utf-8');
+    
     // Extract title from #+TITLE directive or filename
-    const title = this.extractTitle(content) || path.basename(filePath, path.extname(filePath));
+    const title = this.extractTitle(textContent) || path.basename(filePath, path.extname(filePath));
     
     // Extract headings
-    const headings = this.extractHeadings(content);
+    const headings = this.extractHeadings(textContent);
     
     // Extract links
-    const outgoingLinks = this.extractLinks(content, filePath);
+    const outgoingLinks = this.extractLinks(textContent, filePath);
     
     // Extract tags
-    const tags = this.extractTags(content);
+    const tags = this.extractTags(textContent);
     
     // Calculate word count (excluding org syntax)
-    const cleanContent = this.cleanOrgSyntax(content);
+    const cleanContent = this.cleanOrgSyntax(textContent);
     const wordCount = cleanContent.split(/\s+/).filter(word => word.length > 0).length;
     
     // Get file modification time
@@ -33,7 +36,7 @@ export class ORGParser implements BaseParser {
     const relativePath = path.relative(notesRoot, filePath);
     
     // Extract metadata from org directives
-    const frontmatter = this.extractMetadata(content);
+    const frontmatter = this.extractMetadata(textContent);
     
     return {
       path: filePath,

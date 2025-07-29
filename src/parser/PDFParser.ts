@@ -4,20 +4,38 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import pdf from 'pdf-parse';
 import { BaseParser } from './BaseParser';
 import { Note, Heading, Link, LinkType } from '../models/types';
 
 export class PDFParser implements BaseParser {
-  async parse(filePath: string, content: string, notesRoot: string): Promise<Note> {
-    // For PDF files, we need to read the raw buffer, not string content
-    const dataBuffer = await fs.promises.readFile(filePath);
-    const pdfData = await pdf(dataBuffer);
+  async parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note> {
+    let text: string;
+    let pdfInfo: any = {};
     
-    const text = pdfData.text;
+    try {
+      // Try using pdftotext for cleaner text extraction
+      text = execSync(`pdftotext -layout "${filePath}" -`, {
+        encoding: 'utf-8',
+        maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+      });
+      
+      // Get basic info using pdf-parse for metadata
+      const dataBuffer = await fs.promises.readFile(filePath);
+      const pdfData = await pdf(dataBuffer, { max: 1 }); // Only parse first page for metadata
+      pdfInfo = pdfData.info || {};
+    } catch (error) {
+      // Fallback to pdf-parse if pdftotext is not available
+      console.log('pdftotext not available, falling back to pdf-parse');
+      const dataBuffer = await fs.promises.readFile(filePath);
+      const pdfData = await pdf(dataBuffer);
+      text = pdfData.text;
+      pdfInfo = pdfData.info || {};
+    }
     
     // Extract title from metadata or filename
-    const title = pdfData.info?.Title || path.basename(filePath, path.extname(filePath));
+    const title = pdfInfo?.Title || path.basename(filePath, path.extname(filePath));
     
     // Extract sections based on text patterns
     const headings = this.extractHeadings(text);
@@ -40,15 +58,14 @@ export class PDFParser implements BaseParser {
     
     // Build metadata from PDF info
     const frontmatter: Record<string, any> = {};
-    if (pdfData.info) {
-      if (pdfData.info.Title) frontmatter.title = pdfData.info.Title;
-      if (pdfData.info.Author) frontmatter.author = pdfData.info.Author;
-      if (pdfData.info.Subject) frontmatter.subject = pdfData.info.Subject;
-      if (pdfData.info.Keywords) frontmatter.keywords = pdfData.info.Keywords;
-      if (pdfData.info.CreationDate) frontmatter.creationDate = pdfData.info.CreationDate;
-      if (pdfData.info.ModDate) frontmatter.modificationDate = pdfData.info.ModDate;
+    if (pdfInfo) {
+      if (pdfInfo.Title) frontmatter.title = pdfInfo.Title;
+      if (pdfInfo.Author) frontmatter.author = pdfInfo.Author;
+      if (pdfInfo.Subject) frontmatter.subject = pdfInfo.Subject;
+      if (pdfInfo.Keywords) frontmatter.keywords = pdfInfo.Keywords;
+      if (pdfInfo.CreationDate) frontmatter.creationDate = pdfInfo.CreationDate;
+      if (pdfInfo.ModDate) frontmatter.modificationDate = pdfInfo.ModDate;
     }
-    frontmatter.pageCount = pdfData.numpages;
     
     return {
       path: filePath,

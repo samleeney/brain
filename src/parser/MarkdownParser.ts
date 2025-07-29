@@ -13,10 +13,12 @@ export class MarkdownParser implements BaseParser {
   private mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
   private tagPattern = /(?:^|(?<=\s))#([a-zA-Z0-9_-]+)/g;
 
-  async parse(filePath: string, content: string, notesRoot: string): Promise<Note> {
+  async parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note> {
+    // Convert Buffer to string if needed
+    const textContent = typeof content === 'string' ? content : content.toString('utf-8');
     
     // Parse frontmatter
-    const { data: frontmatter, content: mainContent } = matter(content);
+    const { data: frontmatter, content: mainContent } = matter(textContent);
     
     // Extract headings
     const headings = this.extractHeadings(mainContent);

@@ -8,21 +8,24 @@ import { BaseParser } from './BaseParser';
 import { Note, Heading, Link, LinkType } from '../models/types';
 
 export class TXTParser implements BaseParser {
-  async parse(filePath: string, content: string, notesRoot: string): Promise<Note> {
+  async parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note> {
+    // Convert Buffer to string if needed
+    const textContent = typeof content === 'string' ? content : content.toString('utf-8');
+    
     // Extract title from filename
     const title = path.basename(filePath, path.extname(filePath));
     
     // Extract sections based on text patterns
-    const headings = this.extractHeadings(content);
+    const headings = this.extractHeadings(textContent);
     
     // Extract links (URLs in text)
-    const outgoingLinks = this.extractLinks(content, filePath);
+    const outgoingLinks = this.extractLinks(textContent, filePath);
     
     // Extract tags (hashtags in text)
-    const tags = this.extractTags(content);
+    const tags = this.extractTags(textContent);
     
     // Calculate word count
-    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+    const wordCount = textContent.split(/\s+/).filter(word => word.length > 0).length;
     
     // Get file modification time
     const stats = await fs.promises.stat(filePath);
@@ -32,7 +35,7 @@ export class TXTParser implements BaseParser {
     const relativePath = path.relative(notesRoot, filePath);
     
     // Extract metadata from the beginning of the file if it looks like key-value pairs
-    const frontmatter = this.extractMetadata(content);
+    const frontmatter = this.extractMetadata(textContent);
     
     return {
       path: filePath,
