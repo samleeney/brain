@@ -143,7 +143,9 @@ async function addFiles(targetPath: string, options: { types?: string }) {
         continue;
       }
       
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = filePath.endsWith('.pdf') 
+        ? fs.readFileSync(filePath) 
+        : fs.readFileSync(filePath, 'utf-8');
       const parseResult = await parser.parse(filePath, content, configDir);
       
       if (!parseResult) {
@@ -166,8 +168,21 @@ async function addFiles(targetPath: string, options: { types?: string }) {
       }
 
       // Create chunks using the chunking service
+      // For PDFs, we need to re-extract the text since we can't pass binary data
+      let textContent: string;
+      if (filePath.endsWith('.pdf')) {
+        // Re-extract text from PDF using pdftotext
+        const { execSync } = require('child_process');
+        textContent = execSync(`pdftotext -layout "${filePath}" -`, {
+          encoding: 'utf-8',
+          maxBuffer: 50 * 1024 * 1024
+        });
+      } else {
+        textContent = content as string;
+      }
+      
       const chunks = ChunkingService.createChunks(
-        content,
+        textContent,
         parseResult.title,
         parseResult.headings,
         filePath

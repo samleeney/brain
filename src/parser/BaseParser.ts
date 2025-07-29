@@ -8,11 +8,11 @@ export interface BaseParser {
   /**
    * Parse a file and extract structured content
    * @param filePath Absolute path to the file
-   * @param content File content as string
+   * @param content File content as string or Buffer
    * @param notesRoot Root directory of the notes vault
    * @returns Parsed note structure
    */
-  parse(filePath: string, content: string, notesRoot: string): Promise<Note>;
+  parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note>;
   
   /**
    * Check if this parser supports the given file extension

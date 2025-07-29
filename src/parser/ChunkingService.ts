@@ -14,8 +14,8 @@ export interface ChunkingOptions {
 
 export class ChunkingService {
   private static readonly DEFAULT_OPTIONS: ChunkingOptions = {
-    maxChunkSize: 1500,
-    overlapSize: 150,
+    maxChunkSize: 6000,  // Maximum safe size (~7500 tokens) to stay under 8192 limit
+    overlapSize: 600,    // 10% overlap
     preserveHeadings: true,
     minChunkSize: 100
   };
@@ -32,23 +32,58 @@ export class ChunkingService {
   ): Chunk[] {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
     const chunks: Chunk[] = [];
-    const lines = content.split('\n');
 
-    // Create title chunk (title + first meaningful paragraph)
-    const titleChunk = this.createTitleChunk(content, title, notePath);
-    if (titleChunk) {
-      chunks.push(titleChunk);
+    // Simple chunking: split content by max size with overlap
+    let chunkIndex = 0;
+    let position = 0;
+
+    while (position < content.length && chunkIndex < 10000) { // Safety limit
+      // Calculate chunk end position
+      let chunkEnd = Math.min(position + opts.maxChunkSize, content.length);
+      
+      // If not at the end, try to break at a word boundary
+      if (chunkEnd < content.length) {
+        const lastSpace = content.lastIndexOf(' ', chunkEnd);
+        if (lastSpace > position + opts.minChunkSize) {
+          chunkEnd = lastSpace;
+        }
+      }
+
+      // Extract chunk content
+      const chunkContent = content.substring(position, chunkEnd).trim();
+      
+      if (chunkContent.length >= opts.minChunkSize) {
+        chunks.push({
+          id: `${notePath}#chunk${chunkIndex}`,
+          content: chunkContent,
+          startLine: 0, // Line numbers not meaningful with this approach
+          endLine: 0,
+          headingContext: [],
+          chunkType: ChunkType.PARAGRAPH
+        });
+        chunkIndex++;
+      }
+
+      // Move position forward
+      if (chunkEnd < content.length) {
+        // Always move forward by at least maxChunkSize - overlapSize to avoid tiny steps
+        const newPosition = Math.max(
+          position + opts.maxChunkSize - opts.overlapSize,
+          chunkEnd - opts.overlapSize
+        );
+        
+        // Safety check - ensure we're moving forward
+        if (newPosition <= position) {
+          position = position + 100; // Force advancement
+        } else {
+          position = newPosition;
+        }
+      } else {
+        break;
+      }
     }
 
-    // Create heading-based chunks
-    if (opts.preserveHeadings && headings.length > 0) {
-      chunks.push(...this.createHeadingChunks(lines, headings, notePath, opts));
-    } else {
-      // Fallback to paragraph-based chunking
-      chunks.push(...this.createParagraphChunks(lines, notePath, opts));
-    }
-
-    return this.deduplicateChunks(chunks, opts);
+    return chunks;
   }
 
   /**
