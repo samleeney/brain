@@ -41,7 +41,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const FileRegistry_1 = require("../storage/FileRegistry");
-const VectorStoreV2_1 = require("../embedding/VectorStoreV2");
+const VectorStore_1 = require("../embedding/VectorStore");
 const EmbeddingService_1 = require("../embedding/EmbeddingService");
 const ParserFactory_1 = require("../parser/ParserFactory");
 const ChunkingService_1 = require("../parser/ChunkingService");
@@ -78,7 +78,7 @@ async function migrate() {
     // Initialize new services
     const fileRegistry = new FileRegistry_1.FileRegistry(configDir);
     await fileRegistry.initialize();
-    const vectorStore = new VectorStoreV2_1.VectorStoreV2(configDir, fileRegistry);
+    const vectorStore = new VectorStore_1.VectorStore(configDir, fileRegistry);
     const embeddingService = apiKey ? new EmbeddingService_1.EmbeddingService(apiKey) : null;
     const parserFactory = new ParserFactory_1.ParserFactory();
     const chunkingService = new ChunkingService_1.ChunkingService();

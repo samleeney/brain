@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Brain CLI - Main command interface for Brain MCP
- * Usage: brain <command> [options]
+ * Brain CLI V2 - Multi-location file support
  */
 export {};
 //# sourceMappingURL=brain.d.ts.map

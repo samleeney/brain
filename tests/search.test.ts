@@ -1,138 +1,289 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import { SearchEngine } from '../src/search/SearchEngine';
-import { GraphBuilder } from '../src/graph/GraphBuilder';
-import { VectorStore } from '../src/embedding/VectorStore';
+import { SearchEngine, SearchResult } from '../src/search/SearchEngine';
+import { VectorStore, VectorDocument, SimilarityResult } from '../src/embedding/VectorStore';
+import { FileRegistry, FileRecord } from '../src/storage/FileRegistry';
+import { EmbeddingService } from '../src/embedding/EmbeddingService';
 
-// Mock VectorStore to use test embeddings
+// Mock dependencies
 jest.mock('../src/embedding/VectorStore');
+jest.mock('../src/storage/FileRegistry');
+jest.mock('../src/embedding/EmbeddingService');
 
-describe('SearchEngine', () => {
-  const testNotesPath = path.join(__dirname, '../test-notes');
+describe('SearchEngine V2', () => {
   let searchEngine: SearchEngine;
-  let graph: any;
+  let mockVectorStore: jest.Mocked<VectorStore>;
+  let mockFileRegistry: jest.Mocked<FileRegistry>;
+  let mockEmbeddingService: jest.Mocked<EmbeddingService>;
 
-  beforeAll(async () => {
-    const graphBuilder = new GraphBuilder(testNotesPath);
-    graph = await graphBuilder.buildGraph();
-    
-    // Create search engine with graph and notes root path
-    searchEngine = new SearchEngine(graph, testNotesPath);
+  beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
 
-    // Load test embeddings
-    const testEmbeddings = JSON.parse(
-      fs.readFileSync(path.join(__dirname, 'test-embeddings.json'), 'utf-8')
-    );
+    // Create mock instances
+    mockFileRegistry = new FileRegistry('/test/config') as jest.Mocked<FileRegistry>;
+    mockVectorStore = new VectorStore('/test/config', mockFileRegistry) as jest.Mocked<VectorStore>;
+    mockEmbeddingService = new EmbeddingService('test-api-key') as jest.Mocked<EmbeddingService>;
 
-    // Mock VectorStore methods
-    const mockVectorStore = VectorStore as jest.MockedClass<typeof VectorStore>;
-    mockVectorStore.prototype.findSimilar = jest.fn().mockImplementation(async (query: string) => {
-      // Simple mock similarity results based on query
-      const results = [];
-      
-      if (query.includes('reach') || query.includes('hexagonal') || query.includes('21-cm')) {
-        results.push({
-          document: {
-            id: 'reach-antenna-design#title',
-            metadata: {
-              notePath: path.join(testNotesPath, 'reach-antenna-design.md'),
-              headingContext: ['REACH Antenna Design'],
-              chunkType: 'title'
-            }
-          },
+    // Create search engine with mocked dependencies
+    searchEngine = new SearchEngine(mockVectorStore);
+  });
+
+  describe('enhancedSearch', () => {
+    it('should perform basic semantic search when multi-phrase is disabled', async () => {
+      // Mock data
+      const mockFile: FileRecord = {
+        id: 'file-123',
+        absolutePath: '/test/notes/reach-antenna.md',
+        displayName: 'REACH Antenna Design',
+        fileType: 'markdown',
+        fileSize: 1000,
+        lastModified: new Date(),
+        dateAdded: new Date()
+      };
+
+      const mockDocument: VectorDocument = {
+        vectorKey: 'vec-123',
+        fileId: 'file-123',
+        content: 'The REACH telescope uses a hexagonal antenna array optimized for 21-cm observations.',
+        embedding: [0.1, 0.2, 0.3],
+        metadata: {
+          chunkType: 'paragraph',
+          headingContext: ['# REACH Antenna Design', '## Hexagonal Array'],
+          startLine: 10,
+          endLine: 15,
+          chunkIndex: 0
+        }
+      };
+
+      const mockSearchResult: SimilarityResult = {
+        document: mockDocument,
+        file: mockFile,
+        similarity: 0.85,
+        snippet: 'The REACH telescope uses a hexagonal antenna array...'
+      };
+
+      // Mock the search method
+      mockVectorStore.search.mockResolvedValue([mockSearchResult]);
+
+      // Perform search
+      const results = await searchEngine.enhancedSearch(
+        'REACH hexagonal antenna',
+        'test-api-key',
+        10,
+        0.7,
+        false // disable multi-phrase
+      );
+
+      // Verify results
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        fileId: 'file-123',
+        filePath: '/test/notes/reach-antenna.md',
+        displayName: 'REACH Antenna Design',
+        chunkId: 'vec-123',
+        similarity: 0.85,
+        chunkType: 'paragraph'
+      });
+
+      // Verify vectorStore.search was called correctly
+      expect(mockVectorStore.search).toHaveBeenCalledTimes(1);
+      expect(mockVectorStore.search).toHaveBeenCalledWith(
+        'REACH hexagonal antenna',
+        expect.any(EmbeddingService),
+        10,
+        0.7
+      );
+    });
+
+    it('should perform parallel multi-phrase search when enabled', async () => {
+      // Mock data for multiple results
+      const mockFiles: FileRecord[] = [
+        {
+          id: 'file-1',
+          absolutePath: '/test/notes/reach-antenna.md',
+          displayName: 'REACH Antenna Design',
+          fileType: 'markdown',
+          fileSize: 1000,
+          lastModified: new Date(),
+          dateAdded: new Date()
+        },
+        {
+          id: 'file-2',
+          absolutePath: '/test/notes/cosmic-dawn.md',
+          displayName: 'Cosmic Dawn Theory',
+          fileType: 'markdown',
+          fileSize: 2000,
+          lastModified: new Date(),
+          dateAdded: new Date()
+        }
+      ];
+
+      const mockDocuments: VectorDocument[] = [
+        {
+          vectorKey: 'vec-1',
+          fileId: 'file-1',
+          content: 'REACH uses hexagonal antenna arrays',
+          embedding: [0.1, 0.2, 0.3],
+          metadata: {
+            chunkType: 'paragraph',
+            headingContext: ['# REACH Design'],
+            startLine: 1,
+            endLine: 5,
+            chunkIndex: 0
+          }
+        },
+        {
+          vectorKey: 'vec-2',
+          fileId: 'file-2',
+          content: 'Cosmic dawn 21-cm signal detection',
+          embedding: [0.4, 0.5, 0.6],
+          metadata: {
+            chunkType: 'paragraph',
+            headingContext: ['# Theory'],
+            startLine: 10,
+            endLine: 15,
+            chunkIndex: 0
+          }
+        }
+      ];
+
+      const mockSearchResults: SimilarityResult[][] = [
+        // Results for first query variation
+        [{
+          document: mockDocuments[0],
+          file: mockFiles[0],
           similarity: 0.9,
-          snippet: 'The REACH telescope employs a unique hexagonal array of bow-tie dipole antennas...'
-        });
-      }
-      
-      if (query.includes('cosmic dawn') || query.includes('foreground')) {
-        results.push({
-          document: {
-            id: 'cosmic-dawn-theory#title',
-            metadata: {
-              notePath: path.join(testNotesPath, 'cosmic-dawn-theory.md'),
-              headingContext: ['Cosmic Dawn Theory'],
-              chunkType: 'title'
-            }
-          },
+          snippet: 'REACH uses hexagonal...'
+        }],
+        // Results for second query variation
+        [{
+          document: mockDocuments[1],
+          file: mockFiles[1],
           similarity: 0.8,
-          snippet: 'The 21-cm hyperfine transition of neutral hydrogen provides a unique probe...'
-        });
-      }
+          snippet: 'Cosmic dawn 21-cm...'
+        }]
+      ];
+
+      // Mock search to return different results for different queries
+      // The search engine will generate query variations, so we need to handle multiple calls
+      let callCount = 0;
+      mockVectorStore.search.mockImplementation(async () => {
+        // Return alternating results to simulate different query variations finding different documents
+        return callCount++ % 2 === 0 ? mockSearchResults[0] : mockSearchResults[1];
+      });
+
+      // Perform search
+      const results = await searchEngine.enhancedSearch(
+        'REACH cosmic dawn',
+        'test-api-key',
+        10,
+        0.7,
+        true // enable multi-phrase
+      );
+
+      // Verify parallel searches were performed (at least 2 for query variations)
+      expect(mockVectorStore.search.mock.calls.length).toBeGreaterThanOrEqual(2);
       
-      if (query.includes('bayesian') || query.includes('pipeline')) {
-        results.push({
-          document: {
-            id: 'bayesian-pipeline#title',
-            metadata: {
-              notePath: path.join(testNotesPath, 'bayesian-pipeline.md'),
-              headingContext: ['REACH Bayesian Analysis Pipeline'],
-              chunkType: 'title'
-            }
-          },
-          similarity: 0.85,
-          snippet: 'The REACH pipeline uses Bayesian inference to extract the faint 21-cm signal...'
-        });
-      }
-      
-      if (query.includes('meeting') || query.includes('collaboration')) {
-        results.push({
-          document: {
-            id: 'meetings/2024-reach-collaboration#title',
-            metadata: {
-              notePath: path.join(testNotesPath, 'meetings/2024-reach-collaboration.md'),
-              headingContext: ['REACH Collaboration Meeting 2024'],
-              chunkType: 'title'
-            }
-          },
-          similarity: 0.87,
-          snippet: 'Chromatic response: Fully characterised 50-200 MHz...'
-        });
-      }
-      
-      return results;
+      // Verify results contain both documents
+      expect(results.length).toBeGreaterThanOrEqual(2);
+      const fileIds = results.map(r => r.fileId);
+      expect(fileIds).toContain('file-1');
+      expect(fileIds).toContain('file-2');
+    });
+
+    it('should handle search errors gracefully', async () => {
+      // Mock search to throw error
+      mockVectorStore.search.mockRejectedValue(new Error('Embedding service error'));
+
+      // Expect search to throw
+      await expect(
+        searchEngine.enhancedSearch('test query', 'test-api-key')
+      ).rejects.toThrow('Embedding service error');
+    });
+
+    it('should deduplicate results in multi-phrase search', async () => {
+      // Mock same document returned from multiple searches
+      const mockFile: FileRecord = {
+        id: 'file-1',
+        absolutePath: '/test/notes/reach.md',
+        displayName: 'REACH Overview',
+        fileType: 'markdown',
+        fileSize: 1000,
+        lastModified: new Date(),
+        dateAdded: new Date()
+      };
+
+      const mockDocument: VectorDocument = {
+        vectorKey: 'vec-same',
+        fileId: 'file-1',
+        content: 'REACH telescope for cosmic dawn detection',
+        embedding: [0.1, 0.2, 0.3],
+        metadata: {
+          chunkType: 'paragraph',
+          headingContext: ['# Overview'],
+          startLine: 1,
+          endLine: 5,
+          chunkIndex: 0
+        }
+      };
+
+      const result1: SimilarityResult = {
+        document: mockDocument,
+        file: mockFile,
+        similarity: 0.85,
+        snippet: 'REACH telescope...'
+      };
+
+      const result2: SimilarityResult = {
+        document: mockDocument,
+        file: mockFile,
+        similarity: 0.90, // Higher similarity
+        snippet: 'REACH telescope...'
+      };
+
+      // Mock search to return same document with different similarities
+      let searchCallCount = 0;
+      mockVectorStore.search.mockImplementation(async () => {
+        // First call returns lower similarity, second returns higher
+        return searchCallCount++ === 0 ? [result1] : [result2];
+      });
+
+      // Perform search
+      const results = await searchEngine.enhancedSearch(
+        'REACH telescope',
+        'test-api-key',
+        10,
+        0.7,
+        true
+      );
+
+      // Should only have one result with the higher similarity
+      expect(results).toHaveLength(1);
+      expect(results[0].similarity).toBe(0.90);
     });
   });
 
-  test('should initialize with graph', () => {
-    expect(searchEngine).toBeDefined();
-  });
+  describe('comprehensiveResearch', () => {
+    it('should perform multiple search strategies', async () => {
+      // Mock successful searches
+      mockVectorStore.search.mockResolvedValue([]);
 
-  test('should handle search queries', () => {
-    // Test that SearchEngine exists and has expected methods
-    expect(typeof searchEngine.semanticSearch).toBe('function');
-    expect(typeof searchEngine.enhancedSearch).toBe('function');
-    expect(typeof searchEngine.comprehensiveSearch).toBe('function');
-  });
+      // Perform comprehensive research
+      const results = await searchEngine.comprehensiveResearch(
+        'REACH antenna bayesian analysis',
+        'test-api-key',
+        15,
+        0.3
+      );
 
-  test('should find REACH antenna content', async () => {
-    const results = await searchEngine.semanticSearch('reach hexagonal antenna array', 'mock-api-key', 10, 0.1);
-    
-    // Should return mocked results
-    expect(results.length).toBeGreaterThan(0);
-    
-    const reachResult = results.find(r => r.notePath.includes('reach-antenna-design.md'));
-    expect(reachResult).toBeDefined();
-    expect(reachResult?.similarity).toBeGreaterThan(0.5);
-  });
-
-  test('should find cosmic dawn content', async () => {
-    const results = await searchEngine.semanticSearch('cosmic dawn 21-cm foreground', 'mock-api-key', 10, 0.1);
-    
-    expect(results.length).toBeGreaterThan(0);
-    
-    const cosmicResult = results.find(r => r.notePath.includes('cosmic-dawn-theory.md'));
-    expect(cosmicResult).toBeDefined();
-    expect(cosmicResult?.snippet.toLowerCase()).toContain('21-cm');
-  });
-
-  test('should find REACH collaboration meeting notes', async () => {
-    const results = await searchEngine.semanticSearch('reach collaboration meeting bayesian', 'mock-api-key', 10, 0.1);
-    
-    expect(results.length).toBeGreaterThan(0);
-    
-    const meetingResult = results.find(r => r.notePath.includes('2024-reach-collaboration.md'));
-    expect(meetingResult).toBeDefined();
-    expect(meetingResult?.snippet).toContain('Chromatic');
+      // Should perform multiple searches
+      expect(mockVectorStore.search.mock.calls.length).toBeGreaterThan(3);
+      
+      // Check that different query variations were used
+      const queries = mockVectorStore.search.mock.calls.map(call => call[0]);
+      expect(queries).toContain('REACH antenna bayesian analysis');
+      expect(queries.some(q => q.includes('REACH'))).toBe(true);
+      expect(queries.some(q => q.includes('antenna'))).toBe(true);
+      expect(queries.some(q => q.includes('bayesian'))).toBe(true);
+    });
   });
 });

@@ -3,16 +3,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { SearchEngine } from '../search/SearchEngine';
-import { GraphBuilder } from '../graph/GraphBuilder';
-import { CacheManager } from '../cache/CacheManager';
+import { FileRegistry } from '../storage/FileRegistry';
+import { VectorStore } from '../embedding/VectorStore';
 import { LLMFormatter } from '../formatters/LLMFormatter';
-import { KnowledgeGraph } from '../models/types';
 import path from 'path';
 import fs from 'fs/promises';
-import { VectorStore } from '../embedding/VectorStore';
-import { EmbeddingService } from '../embedding/EmbeddingService';
 
-// Tool parameter schemas - use raw shape for MCP SDK
+// Tool parameter schemas
 const SearchSchema = {
   query: z.string().describe('Search query for semantic similarity search'),
   maxResults: z.number().min(1).max(50).default(10).describe('Maximum number of results to return'),
@@ -27,99 +24,74 @@ const ComprehensiveSearchSchema = {
 };
 
 const ReadSchema = {
-  notePath: z.string().describe('Path to the note to read (relative to vault root)')
+  notePath: z.string().describe('Path to the note to read (can be display name or absolute path)')
 };
 
 const OverviewSchema = {
-  depth: z.number().min(1).max(5).default(3).describe('Depth of analysis for the knowledge graph')
-};
-
-const RelatedSchema = {
-  notePath: z.string().describe('Path to the note to find related notes for'),
-  maxResults: z.number().min(1).max(20).default(5).describe('Maximum number of related notes to return')
+  depth: z.number().min(1).max(5).default(3).describe('Depth of analysis for the knowledge base')
 };
 
 const ListSchema = {
-  directory: z.string().optional().describe('Directory path relative to vault root (optional)')
+  directory: z.string().optional().describe('Filter by directory path (optional)')
 };
 
 /**
- * Brain MCP Server - Semantic knowledge base access
+ * Brain MCP Server - Multi-location file support
  */
 export class BrainMCPServer {
   private mcpServer: McpServer;
   private searchEngine: SearchEngine | null = null;
-  private graphBuilder: GraphBuilder | null = null;
-  private cacheManager: CacheManager | null = null;
-  private formatter: LLMFormatter;
-  private vaultPath: string = '';
-  private graph: KnowledgeGraph | null = null;
+  private fileRegistry: FileRegistry | null = null;
   private vectorStore: VectorStore | null = null;
-  private embeddingService: EmbeddingService | null = null;
+  private formatter: LLMFormatter;
+  private configDir: string = '';
   private apiKey: string | null = null;
 
   constructor() {
     this.mcpServer = new McpServer({
       name: 'brain-mcp-server',
-      version: '1.0.0'
+      version: '2.0.0'
     });
     this.formatter = new LLMFormatter();
     this.registerTools();
   }
 
   private async initialize() {
-    // Load configuration
-    const configPath = path.join(process.env.HOME || '~', '.brain', 'config.json');
+    // Set up configuration directory
+    this.configDir = path.join(process.env.HOME || '~', '.brain');
+    
+    // Load API key from config or environment
+    const configPath = path.join(this.configDir, 'config.json');
     try {
       const configData = await fs.readFile(configPath, 'utf-8');
       const config = JSON.parse(configData);
-      this.vaultPath = config.vaultPath;
-
-      // Initialize services
-      this.cacheManager = new CacheManager(this.vaultPath);
-      this.graphBuilder = new GraphBuilder(this.vaultPath);
-      
-      // Build initial graph
-      this.graph = await this.graphBuilder.buildGraph();
-
-      // Initialize search engine with graph
-      this.searchEngine = new SearchEngine(this.graph, this.vaultPath);
-      
-      // Initialize embedding service and vector store if API key is available
       this.apiKey = config.openaiApiKey || process.env.OPENAI_API_KEY;
-      if (this.apiKey) {
-        this.embeddingService = new EmbeddingService(this.apiKey);
-        this.vectorStore = new VectorStore(this.vaultPath);
-        
-        // Generate embeddings for all chunks if they exist
-        const allChunks = Array.from(this.graph.nodes.values()).flatMap(node => 
-          node.note.chunks || []
-        );
-        
-        if (allChunks.length > 0) {
-          console.error(`Generating embeddings for ${allChunks.length} chunks...`);
-          // TODO: Implement batch embedding generation in VectorStore
-        }
-      }
     } catch (error) {
-      console.error('Failed to initialize Brain MCP Server:', error);
-      throw error;
+      this.apiKey = process.env.OPENAI_API_KEY || null;
     }
+
+    // Initialize file registry
+    this.fileRegistry = new FileRegistry(this.configDir);
+    await this.fileRegistry.initialize();
+
+    // Initialize vector store
+    this.vectorStore = new VectorStore(this.configDir, this.fileRegistry);
+
+    // Initialize search engine
+    this.searchEngine = new SearchEngine(this.vectorStore);
+
+    console.error('Brain MCP Server initialized with multi-location support');
   }
 
   private registerTools() {
-    // Register brain_search tool
+    // Search tool
     this.mcpServer.tool(
       'brain_search',
       'Search through knowledge base using enhanced parallel semantic similarity with automatic query expansion',
       SearchSchema,
       async (params) => {
-        if (!this.searchEngine || !this.graph) {
-          throw new Error('Search engine not initialized');
-        }
-
-        if (!this.apiKey) {
-          throw new Error('OpenAI API key not configured. Please run setup or set OPENAI_API_KEY environment variable.');
+        if (!this.searchEngine || !this.apiKey) {
+          throw new Error('Brain server not initialized or API key not configured');
         }
 
         const results = await this.searchEngine.enhancedSearch(
@@ -130,203 +102,219 @@ export class BrainMCPServer {
           params.enableMultiPhrase
         );
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatSemanticSearchResults(results, this.graph)
-            }
-          ]
-        };
+        if (results.length === 0) {
+          return { content: [{ 
+            type: 'text', 
+            text: 'No relevant content found. Try lowering the similarity threshold with the -t option.' 
+          }] };
+        }
+
+        // Format results manually since we don't have a graph
+        let formatted = '=== SEMANTIC SEARCH RESULTS ===\n\n';
+        
+        for (const result of results) {
+          formatted += `📄 ${result.displayName}\n`;
+          formatted += `   Similarity: ${(result.similarity * 100).toFixed(1)}%\n`;
+          if (result.headingContext.length > 0) {
+            formatted += `   Context: ${result.headingContext.join(' > ')}\n`;
+          }
+          formatted += `   ${result.snippet}\n\n`;
+        }
+
+        return { content: [{ type: 'text', text: formatted }] };
       }
     );
 
-    // Register brain_research tool for comprehensive searches
+    // Comprehensive research tool
     this.mcpServer.tool(
       'brain_research',
       'Comprehensive research search using multiple strategies in parallel for complex queries',
       ComprehensiveSearchSchema,
       async (params) => {
-        if (!this.searchEngine || !this.graph) {
-          throw new Error('Search engine not initialized');
+        if (!this.searchEngine || !this.apiKey) {
+          throw new Error('Brain server not initialized or API key not configured');
         }
 
-        if (!this.apiKey) {
-          throw new Error('OpenAI API key not configured. Please run setup or set OPENAI_API_KEY environment variable.');
-        }
-
-        const results = await this.searchEngine.comprehensiveSearch(
+        const results = await this.searchEngine.comprehensiveResearch(
           params.query,
           this.apiKey,
           params.maxResults,
           params.threshold
         );
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatSemanticSearchResults(results, this.graph)
-            }
-          ]
-        };
+        if (results.length === 0) {
+          return { content: [{ 
+            type: 'text', 
+            text: 'No relevant content found. The query may be too specific or the content may not exist in the knowledge base.' 
+          }] };
+        }
+
+        // Format results manually since we don't have a graph
+        let formatted = '=== SEMANTIC SEARCH RESULTS ===\n\n';
+        
+        for (const result of results) {
+          formatted += `📄 ${result.displayName}\n`;
+          formatted += `   Similarity: ${(result.similarity * 100).toFixed(1)}%\n`;
+          if (result.headingContext.length > 0) {
+            formatted += `   Context: ${result.headingContext.join(' > ')}\n`;
+          }
+          formatted += `   ${result.snippet}\n\n`;
+        }
+
+        return { content: [{ type: 'text', text: formatted }] };
       }
     );
 
-    // Register brain_read tool
+    // Read tool with absolute path support
     this.mcpServer.tool(
       'brain_read',
       'Read a specific note from the knowledge base',
       ReadSchema,
       async (params) => {
-        if (!this.graph) {
-          throw new Error('Graph not initialized');
+        if (!this.fileRegistry) {
+          throw new Error('Brain server not initialized');
         }
 
-        // Find node by relative path
-        let node = null;
-        for (const [path, graphNode] of this.graph.nodes.entries()) {
-          if (graphNode.note.relativePath === params.notePath) {
-            node = graphNode;
-            break;
-          }
+        // Try to find file by display name first
+        let fileRecord = await this.fileRegistry.getFileByDisplayName(params.notePath);
+        
+        // If not found, try as absolute path
+        if (!fileRecord) {
+          fileRecord = await this.fileRegistry.getFileByPath(params.notePath);
         }
 
-        if (!node) {
+        if (!fileRecord) {
           throw new Error(`Note not found: ${params.notePath}`);
         }
 
-        // Read the actual file content
-        const content = await fs.readFile(node.note.path, 'utf-8');
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatNoteRead(node, content)
-            }
-          ]
-        };
+        // Read the file content
+        try {
+          const content = await fs.readFile(fileRecord.absolutePath, 'utf-8');
+          const formatted = `=== ${fileRecord.displayName} ===\n\n${content}`;
+          return { content: [{ type: 'text', text: formatted }] };
+        } catch (error) {
+          throw new Error(`Failed to read file: ${(error as Error).message}`);
+        }
       }
     );
 
-    // Register brain_overview tool
+    // Overview tool
     this.mcpServer.tool(
       'brain_overview',
       'Get a high-level overview of the knowledge base structure',
       OverviewSchema,
       async (params) => {
-        if (!this.graph) {
-          throw new Error('Graph not initialized');
+        if (!this.fileRegistry || !this.vectorStore) {
+          throw new Error('Brain server not initialized');
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatOverview(this.graph)
-            }
-          ]
+        const files = await this.fileRegistry.getAllFiles();
+        const stats = await this.vectorStore.getStats();
+
+        const overview = {
+          totalFiles: files.length,
+          totalChunks: stats.totalDocuments,
+          filesByType: files.reduce((acc, file) => {
+            acc[file.fileType] = (acc[file.fileType] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>),
+          recentFiles: files
+            .sort((a, b) => b.dateAdded.getTime() - a.dateAdded.getTime())
+            .slice(0, 10)
+            .map(f => ({ name: f.displayName, added: f.dateAdded.toISOString() }))
         };
+
+        const formatted = `📊 Knowledge Base Overview
+
+📁 Total Files: ${overview.totalFiles}
+📄 Total Chunks: ${overview.totalChunks}
+
+📈 Files by Type:
+${Object.entries(overview.filesByType)
+  .map(([type, count]) => `  • ${type}: ${count}`)
+  .join('\n')}
+
+🕐 Recently Added:
+${overview.recentFiles
+  .map(f => `  • ${f.name} (${new Date(f.added).toLocaleDateString()})`)
+  .join('\n')}`;
+
+        return { content: [{ type: 'text', text: formatted }] };
       }
     );
 
-    // Register brain_related tool
-    this.mcpServer.tool(
-      'brain_related',
-      'Find notes related to a specific note',
-      RelatedSchema,
-      async (params) => {
-        if (!this.graph) {
-          throw new Error('Graph not initialized');
-        }
-
-        // Find node by relative path
-        let node = null;
-        for (const [path, graphNode] of this.graph.nodes.entries()) {
-          if (graphNode.note.relativePath === params.notePath) {
-            node = graphNode;
-            break;
-          }
-        }
-
-        if (!node) {
-          throw new Error(`Note not found: ${params.notePath}`);
-        }
-
-        // Find related notes based on links and structure
-        const related: Array<{ path: string; type: string; reason: string }> = [];
-        
-        // Direct outgoing links
-        for (const link of node.note.outgoingLinks) {
-          if (!link.isBroken && link.targetPath) {
-            related.push({
-              path: link.targetPath,
-              type: 'direct',
-              reason: 'Outgoing link'
-            });
-          }
-        }
-        
-        // Direct incoming links
-        for (const link of node.incomingLinks) {
-          related.push({
-            path: link.sourcePath,
-            type: 'direct',
-            reason: 'Incoming link'
-          });
-        }
-        
-        // Limit to maxResults
-        const limitedRelated = related.slice(0, params.maxResults);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatRelatedNotes(limitedRelated, this.graph)
-            }
-          ]
-        };
-      }
-    );
-
-    // Register brain_list tool
+    // List tool
     this.mcpServer.tool(
       'brain_list',
-      'List notes in a directory or the entire vault',
+      'List notes in the knowledge base',
       ListSchema,
       async (params) => {
-        if (!this.graph) {
-          throw new Error('Graph not initialized');
+        if (!this.fileRegistry) {
+          throw new Error('Brain server not initialized');
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: this.formatter.formatLs(this.graph, params.directory || '')
-            }
-          ]
-        };
+        let files = await this.fileRegistry.getAllFiles();
+
+        // Filter by directory if specified
+        if (params.directory) {
+          files = files.filter(f => 
+            f.displayName.startsWith(params.directory!)
+          );
+        }
+
+        if (files.length === 0) {
+          return { content: [{ 
+            type: 'text', 
+            text: params.directory 
+              ? `No files found in directory: ${params.directory}`
+              : 'No files found in knowledge base' 
+          }] };
+        }
+
+        // Group by directory
+        const fileTree = new Map<string, string[]>();
+        
+        for (const file of files) {
+          const parts = file.displayName.split('/');
+          const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '/';
+          const fileName = parts[parts.length - 1];
+          
+          if (!fileTree.has(dir)) {
+            fileTree.set(dir, []);
+          }
+          fileTree.get(dir)!.push(fileName);
+        }
+
+        // Format as tree
+        let output = params.directory || '/';
+        output += '\n';
+        
+        for (const [dir, fileNames] of fileTree) {
+          if (dir !== '/') {
+            output += `├── ${dir}/\n`;
+          }
+          for (const fileName of fileNames.sort()) {
+            const prefix = dir === '/' ? '├── ' : '│   ├── ';
+            output += `${prefix}${fileName}\n`;
+          }
+        }
+
+        return { content: [{ type: 'text', text: output }] };
       }
     );
   }
 
-  async run() {
-    // Initialize services first
+  async start() {
     await this.initialize();
-
-    // Create transport and connect
     const transport = new StdioServerTransport();
     await this.mcpServer.connect(transport);
-
-    console.error('Brain MCP server running on stdio');
+    console.error('Brain MCP Server V2 connected via stdio');
   }
 }
 
-// Main entry point - using CommonJS style check
-if (require.main === module) {
-  const server = new BrainMCPServer();
-  server.run().catch(console.error);
-}
+// Start server
+const server = new BrainMCPServer();
+server.start().catch(error => {
+  console.error('Server failed to start:', error);
+  process.exit(1);
+});

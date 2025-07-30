@@ -4,7 +4,7 @@
 import { BaseParser } from './BaseParser';
 import { Note } from '../models/types';
 export declare class PDFParser implements BaseParser {
-    parse(filePath: string, content: string, notesRoot: string): Promise<Note>;
+    parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note>;
     private extractHeadings;
     private extractLinks;
     private extractTags;

@@ -1,65 +1,65 @@
 /**
- * Vector storage and similarity search for note embeddings
+ * Vector storage and similarity search for note embeddings with FileRegistry integration
  */
 import { EmbeddingService } from './EmbeddingService';
 import { Chunk } from '../models/types';
+import { FileRegistry, FileRecord } from '../storage/FileRegistry';
 export interface VectorDocument {
-    id: string;
-    title: string;
+    vectorKey: string;
+    fileId: string;
     content: string;
     embedding: number[];
     metadata: {
-        notePath: string;
-        relativePath: string;
-        lastModified: Date;
-        wordCount: number;
         chunkType: string;
         headingContext: string[];
         startLine: number;
         endLine: number;
+        chunkIndex: number;
     };
 }
 export interface SimilarityResult {
     document: VectorDocument;
+    file: FileRecord;
     similarity: number;
     snippet: string;
 }
 export declare class VectorStore {
     private documents;
     private filePath;
-    constructor(notesRoot: string);
+    private fileRegistry;
+    constructor(configDir: string, fileRegistry: FileRegistry);
     /**
-     * Add embeddings for note chunks
+     * Add embeddings for file chunks
      */
-    addNoteChunks(notePath: string, title: string, chunks: Chunk[], relativePath: string, lastModified: Date, wordCount: number, embeddingService: EmbeddingService): Promise<void>;
+    addFileChunks(fileRecord: FileRecord, chunks: Chunk[], embeddingService: EmbeddingService): Promise<void>;
     /**
-     * Remove embeddings for a note
+     * Search for similar content with FileRegistry integration
      */
-    removeNote(notePath: string): void;
+    search(query: string, embeddingService: EmbeddingService, topK?: number, threshold?: number): Promise<SimilarityResult[]>;
     /**
-     * Find similar chunks using semantic similarity
+     * Remove all chunks for a file
      */
-    findSimilar(query: string, embeddingService: EmbeddingService, limit?: number, threshold?: number): Promise<SimilarityResult[]>;
+    removeFile(fileId: string): Promise<void>;
     /**
-     * Get all note paths that have embeddings
+     * Get document by vector key
      */
-    getIndexedNotes(): string[];
+    getDocumentByKey(vectorKey: string): Promise<VectorDocument | null>;
     /**
-     * Get all note paths that have embeddings (alias for getIndexedNotes)
+     * Check if file has been indexed
      */
-    getAllNotePaths(): string[];
+    hasFile(absolutePath: string): Promise<boolean>;
     /**
-     * Check if a note needs re-embedding (file modified since last embedding)
+     * Get file's last indexed time
      */
-    needsReembedding(notePath: string, lastModified: Date): boolean;
+    getFileLastIndexed(absolutePath: string): Promise<Date | null>;
     /**
-     * Get statistics about the vector store
+     * Calculate cosine similarity between two vectors
      */
-    getStats(): {
-        totalNotes: number;
-        totalChunks: number;
-        averageChunksPerNote: number;
-    };
+    private cosineSimilarity;
+    /**
+     * Create a snippet from content around query terms
+     */
+    private createSnippet;
     /**
      * Save vector store to disk
      */
@@ -69,12 +69,12 @@ export declare class VectorStore {
      */
     private loadFromDisk;
     /**
-     * Clear all embeddings
+     * Get statistics about the vector store
      */
-    clear(): void;
-    /**
-     * Export vector store data for debugging
-     */
-    export(): any;
+    getStats(): Promise<{
+        totalDocuments: number;
+        totalFiles: number;
+        totalSize: number;
+    }>;
 }
 //# sourceMappingURL=VectorStore.d.ts.map

@@ -42,16 +42,18 @@ const fs = __importStar(require("fs"));
 const types_1 = require("../models/types");
 class ORGParser {
     async parse(filePath, content, notesRoot) {
+        // Convert Buffer to string if needed
+        const textContent = typeof content === 'string' ? content : content.toString('utf-8');
         // Extract title from #+TITLE directive or filename
-        const title = this.extractTitle(content) || path.basename(filePath, path.extname(filePath));
+        const title = this.extractTitle(textContent) || path.basename(filePath, path.extname(filePath));
         // Extract headings
-        const headings = this.extractHeadings(content);
+        const headings = this.extractHeadings(textContent);
         // Extract links
-        const outgoingLinks = this.extractLinks(content, filePath);
+        const outgoingLinks = this.extractLinks(textContent, filePath);
         // Extract tags
-        const tags = this.extractTags(content);
+        const tags = this.extractTags(textContent);
         // Calculate word count (excluding org syntax)
-        const cleanContent = this.cleanOrgSyntax(content);
+        const cleanContent = this.cleanOrgSyntax(textContent);
         const wordCount = cleanContent.split(/\s+/).filter(word => word.length > 0).length;
         // Get file modification time
         const stats = await fs.promises.stat(filePath);
@@ -59,7 +61,7 @@ class ORGParser {
         // Calculate relative path
         const relativePath = path.relative(notesRoot, filePath);
         // Extract metadata from org directives
-        const frontmatter = this.extractMetadata(content);
+        const frontmatter = this.extractMetadata(textContent);
         return {
             path: filePath,
             relativePath,

@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { FileRegistry } from '../storage/FileRegistry';
-import { VectorStoreV2 } from '../embedding/VectorStoreV2';
+import { VectorStore } from '../embedding/VectorStore';
 import { EmbeddingService } from '../embedding/EmbeddingService';
 import { ParserFactory } from '../parser/ParserFactory';
 import { ChunkingService } from '../parser/ChunkingService';
@@ -72,7 +72,7 @@ async function migrate() {
   const fileRegistry = new FileRegistry(configDir);
   await fileRegistry.initialize();
   
-  const vectorStore = new VectorStoreV2(configDir, fileRegistry);
+  const vectorStore = new VectorStore(configDir, fileRegistry);
   const embeddingService = apiKey ? new EmbeddingService(apiKey) : null;
   const parserFactory = new ParserFactory();
   const chunkingService = new ChunkingService();

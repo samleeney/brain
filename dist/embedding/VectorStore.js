@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Vector storage and similarity search for note embeddings
+ * Vector storage and similarity search for note embeddings with FileRegistry integration
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -39,143 +39,167 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VectorStore = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const EmbeddingService_1 = require("./EmbeddingService");
 class VectorStore {
     documents = new Map();
     filePath;
-    constructor(notesRoot) {
-        this.filePath = path.join(notesRoot, '.brain-vectors.json');
+    fileRegistry;
+    constructor(configDir, fileRegistry) {
+        this.filePath = path.join(configDir, '.brain-vectors-v2.json');
+        this.fileRegistry = fileRegistry;
         this.loadFromDisk();
     }
     /**
-     * Add embeddings for note chunks
+     * Add embeddings for file chunks
      */
-    async addNoteChunks(notePath, title, chunks, relativePath, lastModified, wordCount, embeddingService) {
-        const documents = [];
-        // Generate embeddings for all chunks
-        const chunkTexts = chunks.map(chunk => chunk.content);
-        const embeddings = await embeddingService.embedChunks(chunkTexts);
+    async addFileChunks(fileRecord, chunks, embeddingService) {
+        console.log(`  📝 Processing ${chunks.length} chunks for ${fileRecord.displayName}`);
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];
-            const embedding = embeddings[i];
-            documents.push({
-                id: chunk.id,
-                title: title,
+            // Add chunk to database
+            const chunkRecord = await this.fileRegistry.addChunk(fileRecord.id, i, chunk.content);
+            // Generate embedding
+            const embeddingResult = await embeddingService.embedText(chunk.content);
+            const embedding = embeddingResult.embedding;
+            // Create vector document
+            const vectorDoc = {
+                vectorKey: chunkRecord.vectorStoreKey,
+                fileId: fileRecord.id,
                 content: chunk.content,
-                embedding: embedding.embedding,
+                embedding,
                 metadata: {
-                    notePath,
-                    relativePath,
-                    lastModified,
-                    wordCount,
-                    chunkType: chunk.chunkType,
-                    headingContext: chunk.headingContext,
+                    chunkType: chunk.chunkType.toString(),
+                    headingContext: chunk.headingContext || [],
                     startLine: chunk.startLine,
-                    endLine: chunk.endLine
+                    endLine: chunk.endLine,
+                    chunkIndex: i
                 }
-            });
-        }
-        this.documents.set(notePath, documents);
-    }
-    /**
-     * Remove embeddings for a note
-     */
-    removeNote(notePath) {
-        this.documents.delete(notePath);
-    }
-    /**
-     * Find similar chunks using semantic similarity
-     */
-    async findSimilar(query, embeddingService, limit = 5, threshold = 0.3) {
-        // Preprocess query for better matching
-        const processedQuery = EmbeddingService_1.EmbeddingService.preprocessQuery(query);
-        // Generate query embedding
-        const queryResult = await embeddingService.embedText(processedQuery);
-        const queryEmbedding = queryResult.embedding;
-        const allResults = [];
-        // Calculate similarity with all chunks
-        for (const documents of this.documents.values()) {
-            for (const doc of documents) {
-                const similarity = EmbeddingService_1.EmbeddingService.cosineSimilarity(queryEmbedding, doc.embedding);
-                // Apply chunk-type boosting
-                let boostedSimilarity = similarity;
-                if (doc.metadata.chunkType === 'title') {
-                    boostedSimilarity *= 1.2; // Title chunks are often important
-                }
-                else if (doc.metadata.chunkType === 'heading') {
-                    boostedSimilarity *= 1.1; // Heading sections are structured
-                }
-                if (boostedSimilarity >= threshold) {
-                    allResults.push({ doc, similarity: boostedSimilarity });
-                }
-            }
-        }
-        // Sort by similarity and take top results
-        allResults.sort((a, b) => b.similarity - a.similarity);
-        const topResults = allResults.slice(0, limit);
-        // Convert to SimilarityResult format
-        return topResults.map(result => {
-            const doc = result.doc;
-            // Create contextual snippet
-            let snippet = doc.content.length > 200
-                ? doc.content.substring(0, 200) + '...'
-                : doc.content;
-            // Add heading context if available
-            if (doc.metadata.headingContext.length > 0) {
-                const context = doc.metadata.headingContext.join(' > ');
-                snippet = `[${context}] ${snippet}`;
-            }
-            return {
-                document: doc,
-                similarity: result.similarity,
-                snippet
             };
-        });
-    }
-    /**
-     * Get all note paths that have embeddings
-     */
-    getIndexedNotes() {
-        return Array.from(this.documents.keys());
-    }
-    /**
-     * Get all note paths that have embeddings (alias for getIndexedNotes)
-     */
-    getAllNotePaths() {
-        return this.getIndexedNotes();
-    }
-    /**
-     * Check if a note needs re-embedding (file modified since last embedding)
-     */
-    needsReembedding(notePath, lastModified) {
-        const documents = this.documents.get(notePath);
-        if (!documents || documents.length === 0) {
-            return true;
+            this.documents.set(chunkRecord.vectorStoreKey, vectorDoc);
         }
-        const storedDate = documents[0].metadata.lastModified;
-        return lastModified > storedDate;
     }
     /**
-     * Get statistics about the vector store
+     * Search for similar content with FileRegistry integration
      */
-    getStats() {
-        const totalNotes = this.documents.size;
-        const totalChunks = Array.from(this.documents.values())
-            .reduce((sum, docs) => sum + docs.length, 0);
-        return {
-            totalNotes,
-            totalChunks,
-            averageChunksPerNote: totalNotes > 0 ? totalChunks / totalNotes : 0
-        };
+    async search(query, embeddingService, topK = 10, threshold = 0.7) {
+        const queryResult = await embeddingService.embedText(query);
+        const queryEmbedding = queryResult.embedding;
+        const results = [];
+        // Calculate similarities for all documents
+        for (const [vectorKey, doc] of this.documents.entries()) {
+            const similarity = this.cosineSimilarity(queryEmbedding, doc.embedding);
+            if (similarity >= threshold) {
+                // Get file information from registry
+                const fileRecord = await this.fileRegistry.getFileById(doc.fileId);
+                if (fileRecord) {
+                    results.push({
+                        document: doc,
+                        file: fileRecord,
+                        similarity,
+                        snippet: this.createSnippet(doc.content, query)
+                    });
+                }
+            }
+        }
+        // Sort by similarity and return top K
+        return results
+            .sort((a, b) => b.similarity - a.similarity)
+            .slice(0, topK);
+    }
+    /**
+     * Remove all chunks for a file
+     */
+    async removeFile(fileId) {
+        // Get all chunks for this file
+        const chunks = await this.fileRegistry.getChunksByFileId(fileId);
+        // Remove from vector store
+        for (const chunk of chunks) {
+            this.documents.delete(chunk.vectorStoreKey);
+        }
+        // Remove from database
+        await this.fileRegistry.removeFile(fileId);
+    }
+    /**
+     * Get document by vector key
+     */
+    async getDocumentByKey(vectorKey) {
+        return this.documents.get(vectorKey) || null;
+    }
+    /**
+     * Check if file has been indexed
+     */
+    async hasFile(absolutePath) {
+        const fileRecord = await this.fileRegistry.getFileByPath(absolutePath);
+        return fileRecord !== null;
+    }
+    /**
+     * Get file's last indexed time
+     */
+    async getFileLastIndexed(absolutePath) {
+        const fileRecord = await this.fileRegistry.getFileByPath(absolutePath);
+        return fileRecord ? fileRecord.dateAdded : null;
+    }
+    /**
+     * Calculate cosine similarity between two vectors
+     */
+    cosineSimilarity(a, b) {
+        if (a.length !== b.length) {
+            throw new Error('Vectors must have the same length');
+        }
+        let dotProduct = 0;
+        let normA = 0;
+        let normB = 0;
+        for (let i = 0; i < a.length; i++) {
+            dotProduct += a[i] * b[i];
+            normA += a[i] * a[i];
+            normB += b[i] * b[i];
+        }
+        normA = Math.sqrt(normA);
+        normB = Math.sqrt(normB);
+        if (normA === 0 || normB === 0) {
+            return 0;
+        }
+        return dotProduct / (normA * normB);
+    }
+    /**
+     * Create a snippet from content around query terms
+     */
+    createSnippet(content, query, maxLength = 200) {
+        const words = query.toLowerCase().split(/\s+/);
+        const contentLower = content.toLowerCase();
+        // Find the first occurrence of any query word
+        let bestIndex = -1;
+        for (const word of words) {
+            const index = contentLower.indexOf(word);
+            if (index !== -1 && (bestIndex === -1 || index < bestIndex)) {
+                bestIndex = index;
+            }
+        }
+        if (bestIndex === -1) {
+            // No query words found, return start of content
+            return content.length <= maxLength
+                ? content
+                : content.substring(0, maxLength) + '...';
+        }
+        // Extract snippet around the found word
+        const start = Math.max(0, bestIndex - 50);
+        const end = Math.min(content.length, bestIndex + maxLength - 50);
+        let snippet = content.substring(start, end);
+        if (start > 0)
+            snippet = '...' + snippet;
+        if (end < content.length)
+            snippet = snippet + '...';
+        return snippet;
     }
     /**
      * Save vector store to disk
      */
     async saveToDisk() {
         const data = {
-            version: '1.0',
-            created: new Date().toISOString(),
-            documents: Object.fromEntries(this.documents)
+            version: 2,
+            documents: Array.from(this.documents.entries()).map(([key, doc]) => ({
+                key,
+                ...doc
+            }))
         };
         await fs.promises.writeFile(this.filePath, JSON.stringify(data, null, 2));
     }
@@ -183,43 +207,34 @@ class VectorStore {
      * Load vector store from disk
      */
     loadFromDisk() {
+        if (!fs.existsSync(this.filePath)) {
+            return;
+        }
         try {
-            if (fs.existsSync(this.filePath)) {
-                const data = JSON.parse(fs.readFileSync(this.filePath, 'utf-8'));
-                if (data.documents) {
-                    this.documents = new Map();
-                    for (const [notePath, docs] of Object.entries(data.documents)) {
-                        // Convert stored dates back to Date objects
-                        const documents = docs.map(doc => ({
-                            ...doc,
-                            metadata: {
-                                ...doc.metadata,
-                                lastModified: new Date(doc.metadata.lastModified)
-                            }
-                        }));
-                        this.documents.set(notePath, documents);
-                    }
+            const data = JSON.parse(fs.readFileSync(this.filePath, 'utf-8'));
+            if (data.version === 2 && data.documents) {
+                this.documents.clear();
+                for (const doc of data.documents) {
+                    const { key, ...docData } = doc;
+                    this.documents.set(key, docData);
                 }
             }
         }
         catch (error) {
             console.error('Failed to load vector store:', error);
-            this.documents = new Map();
         }
     }
     /**
-     * Clear all embeddings
+     * Get statistics about the vector store
      */
-    clear() {
-        this.documents.clear();
-    }
-    /**
-     * Export vector store data for debugging
-     */
-    export() {
+    async getStats() {
+        const files = await this.fileRegistry.getAllFiles();
+        const totalSize = Array.from(this.documents.values())
+            .reduce((sum, doc) => sum + doc.embedding.length * 4, 0); // 4 bytes per float
         return {
-            documents: Object.fromEntries(this.documents),
-            stats: this.getStats()
+            totalDocuments: this.documents.size,
+            totalFiles: files.length,
+            totalSize
         };
     }
 }
