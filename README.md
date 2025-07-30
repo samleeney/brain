@@ -64,7 +64,8 @@ The server runs on stdio and is compatible with any MCP client or agentic framew
 brain setup
 
 # Add files to knowledge base (PDFs, markdown, etc.)
-brain add <path>
+brain add <path>              # Add specific file or directory
+brain add .                   # Add all supported files in current directory
 
 # Remove files from knowledge base
 brain remove <path>
