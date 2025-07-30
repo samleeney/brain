@@ -4,8 +4,7 @@
   "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of files from multiple locations through native MCP tools.",
   "main": "dist/mcp/server.js",
   "bin": {
-    "brain": "./dist/cli/brain.js",
-    "brain-migrate": "./dist/migration/migrateToV2.js"
+    "brain": "./dist/cli/brain.js"
   },
   "directories": {
     "docs": "docs"
