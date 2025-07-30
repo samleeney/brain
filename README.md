@@ -45,7 +45,7 @@ After running `brain setup`, add Brain to Claude Code:
 claude mcp add brain node "$(npm root -g)/brain-mcp/dist/mcp/server.js" -s user
 ```
 
-This installs Brain globally for all your Claude Code projects. Learn more about [Claude MCP configuration](https://docs.anthropic.com/en/docs/claude-code/mcp-servers).
+This installs Brain globally for all your Claude Code projects. Brain stores all data in `~/.brain/` directory, making it accessible across all your projects. Learn more about [Claude MCP configuration](https://docs.anthropic.com/en/docs/claude-code/mcp-servers).
 
 ### 4. Add to Other Agentic Frameworks
 Brain is a standard MCP server. For other MCP-compatible systems, use:
@@ -61,6 +61,12 @@ The server runs on stdio and is compatible with any MCP client or agentic framew
 # Interactive setup (notes path, API key, MCP config)
 brain setup
 
+# Add files to knowledge base (PDFs, markdown, etc.)
+brain add <path>
+
+# Remove files from knowledge base
+brain remove <path>
+
 # Update search index for changed files
 brain update
 
@@ -70,6 +76,8 @@ brain clear
 # Show configuration and status
 brain status
 ```
+
+**Note**: Brain stores all data globally in `~/.brain/` directory, allowing you to access your knowledge base from any project location.
 
 ## 🎯 Usage
 

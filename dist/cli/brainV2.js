@@ -154,7 +154,9 @@ async function addFiles(targetPath, options) {
                 console.log(`  ⚠️  No parser for ${path.basename(filePath)}`);
                 continue;
             }
-            const content = fs.readFileSync(filePath, 'utf-8');
+            const content = filePath.endsWith('.pdf')
+                ? fs.readFileSync(filePath)
+                : fs.readFileSync(filePath, 'utf-8');
             const parseResult = await parser.parse(filePath, content, configDir);
             if (!parseResult) {
                 console.log(`  ⚠️  Skipping ${path.basename(filePath)} (no content)`);
@@ -174,7 +176,20 @@ async function addFiles(targetPath, options) {
                 fileRecord = await fileRegistry.addFile(filePath, displayName, fileType);
             }
             // Create chunks using the chunking service
-            const chunks = ChunkingService_1.ChunkingService.createChunks(content, parseResult.title, parseResult.headings, filePath);
+            // For PDFs, we need to re-extract the text since we can't pass binary data
+            let textContent;
+            if (filePath.endsWith('.pdf')) {
+                // Re-extract text from PDF using pdftotext
+                const { execSync } = require('child_process');
+                textContent = execSync(`pdftotext -layout "${filePath}" -`, {
+                    encoding: 'utf-8',
+                    maxBuffer: 50 * 1024 * 1024
+                });
+            }
+            else {
+                textContent = content;
+            }
+            const chunks = ChunkingService_1.ChunkingService.createChunks(textContent, parseResult.title, parseResult.headings, filePath);
             // Add chunks to vector store
             await vectorStore.addFileChunks(fileRecord, chunks, embeddingService);
             processed++;

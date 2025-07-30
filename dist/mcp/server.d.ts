@@ -1,21 +1,18 @@
 #!/usr/bin/env node
 /**
- * Brain MCP Server - Semantic knowledge base access
+ * Brain MCP Server - Multi-location file support
  */
 export declare class BrainMCPServer {
     private mcpServer;
     private searchEngine;
-    private graphBuilder;
-    private cacheManager;
-    private formatter;
-    private vaultPath;
-    private graph;
+    private fileRegistry;
     private vectorStore;
-    private embeddingService;
+    private formatter;
+    private configDir;
     private apiKey;
     constructor();
     private initialize;
     private registerTools;
-    run(): Promise<void>;
+    start(): Promise<void>;
 }
 //# sourceMappingURL=server.d.ts.map

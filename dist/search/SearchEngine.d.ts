@@ -1,9 +1,11 @@
 /**
- * Semantic search engine for knowledge base with parallel multi-phrase optimization
+ * Semantic search engine with FileRegistry integration
  */
-import { KnowledgeGraph } from '../models/types';
+import { VectorStore } from '../embedding/VectorStore';
 export interface SearchResult {
-    notePath: string;
+    fileId: string;
+    filePath: string;
+    displayName: string;
     chunkId: string;
     similarity: number;
     snippet: string;
@@ -11,70 +13,43 @@ export interface SearchResult {
     chunkType: string;
 }
 export declare class SearchEngine {
-    private graph;
-    private notesRoot;
-    constructor(graph: KnowledgeGraph, notesRoot?: string);
+    private vectorStore;
+    constructor(vectorStore: VectorStore);
     /**
      * Enhanced parallel multi-phrase semantic search
-     * Automatically expands queries and searches in parallel for better recall
      */
     enhancedSearch(query: string, apiKey: string, limit?: number, threshold?: number, enableMultiPhrase?: boolean): Promise<SearchResult[]>;
     /**
-     * Comprehensive search for complex research queries
-     * Combines multiple search strategies in a single call for maximum efficiency
+     * Basic semantic search
      */
-    comprehensiveSearch(baseQuery: string, apiKey: string, limit?: number, threshold?: number): Promise<SearchResult[]>;
+    private semanticSearch;
     /**
-     * Generate research-focused query variations for comprehensive searches
+     * Comprehensive research search using multiple strategies
      */
-    private generateResearchQueries;
+    comprehensiveResearch(query: string, apiKey: string, limit?: number, threshold?: number): Promise<SearchResult[]>;
     /**
-     * Check if this is a complex research query that needs domain-specific expansion
-     */
-    private isComplexQuery;
-    /**
-     * Generate domain-specific query variations for complex searches
-     */
-    private generateDomainSpecificQueries;
-    /**
-     * Advanced deduplication and ranking specifically for research queries
-     */
-    private deduplicateAndRankForResearch;
-    /**
-     * Boost certain content types that are more valuable for research
-     */
-    private getContentTypeBoost;
-    /**
-     * Ensure result diversity across different notes to avoid clustering
-     */
-    private diversifyResults;
-    /**
-     * Generate query variations for improved search recall
+     * Generate query variations for multi-phrase search
      */
     private generateQueryVariations;
     /**
-     * Extract important keywords from query, removing stop words
+     * Extract meaningful phrases from query
      */
-    private extractKeywords;
+    private extractPhrases;
     /**
-     * Expand query with synonyms for better recall
+     * Expand common acronyms
      */
-    private expandSynonyms;
+    private expandAcronyms;
     /**
-     * Add contextual terms based on query content
+     * Add synonyms for common terms
      */
-    private addContextualTerms;
+    private addSynonyms;
     /**
-     * Expand temporal queries with related time terms
+     * Generate sub-queries from longer queries
      */
-    private expandTemporal;
+    private generateSubQueries;
     /**
-     * Deduplicate results and rank by relevance
+     * Generate contextual query variations
      */
-    private deduplicateAndRank;
-    /**
-     * Original semantic similarity search - finds relevant chunks using embeddings
-     */
-    semanticSearch(query: string, apiKey: string, limit?: number, threshold?: number): Promise<SearchResult[]>;
+    private generateContextualQueries;
 }
 //# sourceMappingURL=SearchEngine.d.ts.map

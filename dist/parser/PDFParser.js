@@ -42,16 +42,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PDFParser = void 0;
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const child_process_1 = require("child_process");
 const pdf_parse_1 = __importDefault(require("pdf-parse"));
 const types_1 = require("../models/types");
 class PDFParser {
     async parse(filePath, content, notesRoot) {
-        // For PDF files, we need to read the raw buffer, not string content
-        const dataBuffer = await fs.promises.readFile(filePath);
-        const pdfData = await (0, pdf_parse_1.default)(dataBuffer);
-        const text = pdfData.text;
+        let text;
+        let pdfInfo = {};
+        try {
+            // Try using pdftotext for cleaner text extraction
+            text = (0, child_process_1.execSync)(`pdftotext -layout "${filePath}" -`, {
+                encoding: 'utf-8',
+                maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+            });
+            // Get basic info using pdf-parse for metadata
+            const dataBuffer = await fs.promises.readFile(filePath);
+            const pdfData = await (0, pdf_parse_1.default)(dataBuffer, { max: 1 }); // Only parse first page for metadata
+            pdfInfo = pdfData.info || {};
+        }
+        catch (error) {
+            // Fallback to pdf-parse if pdftotext is not available
+            console.log('pdftotext not available, falling back to pdf-parse');
+            const dataBuffer = await fs.promises.readFile(filePath);
+            const pdfData = await (0, pdf_parse_1.default)(dataBuffer);
+            text = pdfData.text;
+            pdfInfo = pdfData.info || {};
+        }
         // Extract title from metadata or filename
-        const title = pdfData.info?.Title || path.basename(filePath, path.extname(filePath));
+        const title = pdfInfo?.Title || path.basename(filePath, path.extname(filePath));
         // Extract sections based on text patterns
         const headings = this.extractHeadings(text);
         // Extract links (PDFs might contain URLs)
@@ -67,21 +85,20 @@ class PDFParser {
         const relativePath = path.relative(notesRoot, filePath);
         // Build metadata from PDF info
         const frontmatter = {};
-        if (pdfData.info) {
-            if (pdfData.info.Title)
-                frontmatter.title = pdfData.info.Title;
-            if (pdfData.info.Author)
-                frontmatter.author = pdfData.info.Author;
-            if (pdfData.info.Subject)
-                frontmatter.subject = pdfData.info.Subject;
-            if (pdfData.info.Keywords)
-                frontmatter.keywords = pdfData.info.Keywords;
-            if (pdfData.info.CreationDate)
-                frontmatter.creationDate = pdfData.info.CreationDate;
-            if (pdfData.info.ModDate)
-                frontmatter.modificationDate = pdfData.info.ModDate;
+        if (pdfInfo) {
+            if (pdfInfo.Title)
+                frontmatter.title = pdfInfo.Title;
+            if (pdfInfo.Author)
+                frontmatter.author = pdfInfo.Author;
+            if (pdfInfo.Subject)
+                frontmatter.subject = pdfInfo.Subject;
+            if (pdfInfo.Keywords)
+                frontmatter.keywords = pdfInfo.Keywords;
+            if (pdfInfo.CreationDate)
+                frontmatter.creationDate = pdfInfo.CreationDate;
+            if (pdfInfo.ModDate)
+                frontmatter.modificationDate = pdfInfo.ModDate;
         }
-        frontmatter.pageCount = pdfData.numpages;
         return {
             path: filePath,
             relativePath,

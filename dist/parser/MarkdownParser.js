@@ -49,8 +49,10 @@ class MarkdownParser {
     mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
     tagPattern = /(?:^|(?<=\s))#([a-zA-Z0-9_-]+)/g;
     async parse(filePath, content, notesRoot) {
+        // Convert Buffer to string if needed
+        const textContent = typeof content === 'string' ? content : content.toString('utf-8');
         // Parse frontmatter
-        const { data: frontmatter, content: mainContent } = (0, gray_matter_1.default)(content);
+        const { data: frontmatter, content: mainContent } = (0, gray_matter_1.default)(textContent);
         // Extract headings
         const headings = this.extractHeadings(mainContent);
         // Extract title (first heading or filename)

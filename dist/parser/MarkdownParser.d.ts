@@ -7,7 +7,7 @@ export declare class MarkdownParser implements BaseParser {
     private wikiLinkPattern;
     private mdLinkPattern;
     private tagPattern;
-    parse(filePath: string, content: string, notesRoot: string): Promise<Note>;
+    parse(filePath: string, content: string | Buffer, notesRoot: string): Promise<Note>;
     private extractHeadings;
     private extractLinks;
     private extractTags;

@@ -2,10 +2,9 @@
   "name": "brain-mcp",
   "version": "2.1.1",
   "description": "Brain MCP Server - Semantic knowledge base access for Claude Code via Model Context Protocol. Provides intelligent search and navigation of files from multiple locations through native MCP tools.",
-  "main": "dist/mcp/serverV2.js",
+  "main": "dist/mcp/server.js",
   "bin": {
-    "brain": "./dist/cli/brainV2.js",
-    "brain-migrate": "./dist/migration/migrateToV2.js"
+    "brain": "./dist/cli/brain.js"
   },
   "directories": {
     "docs": "docs"
@@ -15,10 +14,9 @@
     "clean": "rm -rf dist/ .brain-cache.json .brain-vectors.json",
     "test": "jest",
     "test:watch": "jest --watch",
-    "ci": "npm run build && npm test && node dist/cli/brainV2.js --version",
+    "ci": "npm run build && npm test && node dist/cli/brain.js --version",
     "setup": "node dist/setup.js",
-    "server": "node dist/mcp/serverV2.js",
-    "server:v1": "node dist/mcp/server.js",
+    "server": "node dist/mcp/server.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
