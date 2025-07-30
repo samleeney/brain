@@ -36,7 +36,9 @@ sudo npm install -g brain-mcp
 ```bash
 brain setup
 ```
-This will ask for your notes directory and OpenAI API key.
+This will ask for your OpenAI API key.
+
+**Note**: If you have the `OPENAI_API_KEY` environment variable set, Brain will automatically use it. You can skip storing the API key in the config file if you prefer to use environment variables.
 
 ### 3. Add to Claude Code
 After running `brain setup`, add Brain to Claude Code:
