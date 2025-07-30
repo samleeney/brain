@@ -57,7 +57,7 @@ class SearchEngine {
     /**
      * Basic semantic search
      */
-    async semanticSearch(query, embeddingService, limit = 10, threshold = 0.7) {
+    async semanticSearch(query, embeddingService, limit = 10, threshold = 0.5) {
         try {
             const results = await this.vectorStore.search(query, embeddingService, limit, threshold);
             return results.map(result => ({

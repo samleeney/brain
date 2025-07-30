@@ -1,5 +1,38 @@
 #!/usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -18,7 +51,7 @@ const promises_1 = __importDefault(require("fs/promises"));
 const SearchSchema = {
     query: zod_1.z.string().describe('Search query for semantic similarity search'),
     maxResults: zod_1.z.number().min(1).max(50).default(10).describe('Maximum number of results to return'),
-    threshold: zod_1.z.number().min(0).max(1).default(0.7).describe('Minimum similarity score threshold (0-1)'),
+    threshold: zod_1.z.number().min(0).max(1).default(0.5).describe('Minimum similarity score threshold (0-1)'),
     enableMultiPhrase: zod_1.z.boolean().default(true).describe('Enable parallel multi-phrase search optimization')
 };
 const ComprehensiveSearchSchema = {
@@ -141,7 +174,40 @@ class BrainMCPServer {
             }
             // Read the file content
             try {
-                const content = await promises_1.default.readFile(fileRecord.absolutePath, 'utf-8');
+                let content;
+                // Check if it's a PDF file
+                if (fileRecord.absolutePath.toLowerCase().endsWith('.pdf')) {
+                    // Import and use the PDF parser
+                    const { ParserFactory } = await Promise.resolve().then(() => __importStar(require('../parser/ParserFactory')));
+                    const parserFactory = new ParserFactory();
+                    const parser = parserFactory.getParser(fileRecord.absolutePath);
+                    if (!parser) {
+                        throw new Error('PDF parser not available');
+                    }
+                    // Read the raw PDF content
+                    const rawContent = await promises_1.default.readFile(fileRecord.absolutePath);
+                    // Parse the PDF to extract text
+                    const parsedNote = await parser.parse(fileRecord.absolutePath, rawContent, path_1.default.dirname(fileRecord.absolutePath));
+                    // Extract text from the PDF using pdftotext or pdf-parse
+                    try {
+                        // Try pdftotext first for better results
+                        const { execSync } = await Promise.resolve().then(() => __importStar(require('child_process')));
+                        content = execSync(`pdftotext -layout "${fileRecord.absolutePath}" -`, {
+                            encoding: 'utf-8',
+                            maxBuffer: 50 * 1024 * 1024
+                        });
+                    }
+                    catch {
+                        // Fallback to pdf-parse
+                        const pdf = await Promise.resolve().then(() => __importStar(require('pdf-parse')));
+                        const pdfData = await pdf.default(rawContent);
+                        content = pdfData.text;
+                    }
+                }
+                else {
+                    // For non-PDF files, read as text
+                    content = await promises_1.default.readFile(fileRecord.absolutePath, 'utf-8');
+                }
                 const formatted = `=== ${fileRecord.displayName} ===\n\n${content}`;
                 return { content: [{ type: 'text', text: formatted }] };
             }

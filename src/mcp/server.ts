@@ -13,7 +13,7 @@ import fs from 'fs/promises';
 const SearchSchema = {
   query: z.string().describe('Search query for semantic similarity search'),
   maxResults: z.number().min(1).max(50).default(10).describe('Maximum number of results to return'),
-  threshold: z.number().min(0).max(1).default(0.7).describe('Minimum similarity score threshold (0-1)'),
+  threshold: z.number().min(0).max(1).default(0.5).describe('Minimum similarity score threshold (0-1)'),
   enableMultiPhrase: z.boolean().default(true).describe('Enable parallel multi-phrase search optimization')
 };
 
@@ -189,7 +189,48 @@ export class BrainMCPServer {
 
         // Read the file content
         try {
-          const content = await fs.readFile(fileRecord.absolutePath, 'utf-8');
+          let content: string;
+          
+          // Check if it's a PDF file
+          if (fileRecord.absolutePath.toLowerCase().endsWith('.pdf')) {
+            // Import and use the PDF parser
+            const { ParserFactory } = await import('../parser/ParserFactory');
+            const parserFactory = new ParserFactory();
+            const parser = parserFactory.getParser(fileRecord.absolutePath);
+            
+            if (!parser) {
+              throw new Error('PDF parser not available');
+            }
+            
+            // Read the raw PDF content
+            const rawContent = await fs.readFile(fileRecord.absolutePath);
+            
+            // Parse the PDF to extract text
+            const parsedNote = await parser.parse(
+              fileRecord.absolutePath, 
+              rawContent, 
+              path.dirname(fileRecord.absolutePath)
+            );
+            
+            // Extract text from the PDF using pdftotext or pdf-parse
+            try {
+              // Try pdftotext first for better results
+              const { execSync } = await import('child_process');
+              content = execSync(`pdftotext -layout "${fileRecord.absolutePath}" -`, {
+                encoding: 'utf-8',
+                maxBuffer: 50 * 1024 * 1024
+              });
+            } catch {
+              // Fallback to pdf-parse
+              const pdf = await import('pdf-parse');
+              const pdfData = await pdf.default(rawContent);
+              content = pdfData.text;
+            }
+          } else {
+            // For non-PDF files, read as text
+            content = await fs.readFile(fileRecord.absolutePath, 'utf-8');
+          }
+          
           const formatted = `=== ${fileRecord.displayName} ===\n\n${content}`;
           return { content: [{ type: 'text', text: formatted }] };
         } catch (error) {

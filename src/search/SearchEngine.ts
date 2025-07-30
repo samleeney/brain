@@ -92,7 +92,7 @@ export class SearchEngine {
     query: string,
     embeddingService: EmbeddingService,
     limit: number = 10,
-    threshold: number = 0.7
+    threshold: number = 0.5
   ): Promise<SearchResult[]> {
     try {
       const results = await this.vectorStore.search(query, embeddingService, limit, threshold);

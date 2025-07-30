@@ -54,6 +54,7 @@
     "commander": "^14.0.0",
     "fast-glob": "^3.3.3",
     "glob": "^11.0.2",
+    "gpt-3-encoder": "^1.1.4",
     "graphlib": "^2.1.8",
     "gray-matter": "^4.0.3",
     "inquirer": "^12.6.3",
