@@ -338,6 +338,20 @@ program
   .version('2.0.0');
 
 program
+  .command('setup')
+  .description('Interactive setup for Brain MCP configuration')
+  .action(async () => {
+    try {
+      const setupPath = path.join(__dirname, '..', 'setup.js');
+      const { setupBrain } = require(setupPath);
+      await setupBrain();
+    } catch (error) {
+      console.error('❌ Setup failed:', (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
   .command('add <path>')
   .description('Add files to the Brain knowledge base')
   .option('-t, --types <types>', 'Comma-separated list of file types to include (e.g., pdf,txt,org)')

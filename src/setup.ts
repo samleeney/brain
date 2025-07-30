@@ -2,7 +2,7 @@
 
 /**
  * Brain MCP Setup Script
- * Simple configuration utility for Brain MCP Server
+ * Configuration utility for Brain MCP Server V2
  */
 
 import * as path from 'path';
@@ -11,41 +11,44 @@ import * as os from 'os';
 import inquirer from 'inquirer';
 
 interface BrainConfig {
-  notesRoot: string;
-  openaiApiKey: string;
-  name: string;
-  version: string;
+  openaiApiKey?: string;
 }
 
 async function main() {
   console.log('🧠 Brain MCP Server Setup');
   console.log('');
+  console.log('This will set up Brain MCP for semantic search of your files.');
+  console.log('Files can be added from any location using: brain add <path>');
+  console.log('');
+
+  // Check if already configured
+  const configDir = path.join(os.homedir(), '.brain');
+  const configPath = path.join(configDir, 'config.json');
+  
+  let existingConfig: BrainConfig = {};
+  if (fs.existsSync(configPath)) {
+    try {
+      existingConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      console.log('📋 Found existing configuration.');
+      console.log('');
+    } catch (error) {
+      // Ignore parse errors
+    }
+  }
 
   // Ask for configuration
   const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'notesRoot',
-      message: 'Where is your knowledge base/notes directory?',
-      default: process.cwd(),
-      validate: (input: string) => {
-        const resolvedPath = path.resolve(input);
-        if (!fs.existsSync(resolvedPath)) {
-          return `Directory '${resolvedPath}' does not exist.`;
-        }
-        return true;
-      }
-    },
     {
       type: 'password',
       name: 'openaiApiKey',
       message: 'Enter your OpenAI API key (for semantic search):',
       mask: '*',
+      default: existingConfig.openaiApiKey || process.env.OPENAI_API_KEY || '',
       validate: (input: string) => {
         if (!input || input.trim().length === 0) {
           return 'OpenAI API key is required for semantic search.';
         }
-        if (!input.startsWith('sk-')) {
+        if (!input.startsWith('sk-') && !input.startsWith('${')) {
           return 'OpenAI API key should start with "sk-".';
         }
         return true;
@@ -53,19 +56,19 @@ async function main() {
     }
   ]);
 
-  const notesRoot = path.resolve(answers.notesRoot);
   const openaiApiKey = answers.openaiApiKey.trim();
+
+  // Create configuration directory
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
 
   // Create configuration
   const config: BrainConfig = {
-    notesRoot,
-    openaiApiKey,
-    name: 'brain-mcp-server',
-    version: '1.0.0'
+    openaiApiKey
   };
 
   // Save configuration
-  const configPath = path.join(notesRoot, 'brain-mcp-config.json');
   await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
 
   // Create Claude Desktop configuration
@@ -76,16 +79,15 @@ async function main() {
     mcpServers: {
       brain: {
         command: 'node',
-        args: [brainServerPath],
-        env: {
-          BRAIN_CONFIG: configPath
-        }
+        args: [brainServerPath]
       }
     }
   };
 
   console.log('');
   console.log('✅ Brain MCP Server configured!');
+  console.log('');
+  console.log('📁 Configuration saved to: ' + configPath);
   console.log('');
   console.log('📋 Add this to your Claude Desktop configuration:');
   console.log('');
@@ -107,11 +109,17 @@ async function main() {
   console.log('🔄 Restart Claude Desktop to activate Brain MCP server');
   console.log('');
   console.log('🧠 Brain will provide these tools in Claude Desktop:');
-  console.log('  • brain_search: Semantic search your knowledge base');
-  console.log('  • brain_read: Read specific notes with context');
+  console.log('  • brain_search: Semantic search across all your files');
+  console.log('  • brain_research: Multi-strategy research for complex queries');
+  console.log('  • brain_read: Read specific files with full content');
   console.log('  • brain_overview: Get knowledge base summary');  
-  console.log('  • brain_related: Find related notes');
-  console.log('  • brain_list: List notes in directories');
+  console.log('  • brain_related: Find files connected via links');
+  console.log('  • brain_list: Browse files by directory');
+  console.log('');
+  console.log('📂 Next steps:');
+  console.log('  1. Restart Claude Desktop');
+  console.log('  2. Add files to Brain: brain add <path>');
+  console.log('  3. Check status: brain status');
   console.log('');
   console.log('💡 Just ask Claude to search your brain naturally!');
 

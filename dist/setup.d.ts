@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Brain MCP Setup Script
- * Simple configuration utility for Brain MCP Server
+ * Configuration utility for Brain MCP Server V2
  */
 declare function main(): Promise<void>;
 export { main as setupBrain };
